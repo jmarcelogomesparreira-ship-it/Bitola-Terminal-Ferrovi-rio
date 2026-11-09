@@ -1,0 +1,899 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bitola · Terminal Ferroviário</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+:root{--bg:#e3e1dc;--card:#fff;--ink:#1c2025;--muted:#6a7079;--line:#e1ddd5;--soft:#f4f3f0;--side:#24282e;--side2:#30353c;--sideink:#c3c7cd;--y:#f2b705;--g:#2e9e5b;--r:#d64545;--b:#2f6fb3;--o:#e07b22;--v:#6b5bd6;--sh:0 1px 0 rgba(0,0,0,.03),0 12px 32px -14px rgba(30,35,40,.22)}
+:root[data-theme=dark]{--bg:#141619;--card:#1e2125;--ink:#e9eaec;--muted:#9aa0a8;--line:#2e3238;--soft:#262a2f;--side:#0d0f11;--side2:#1a1d21;--sh:0 12px 32px -14px rgba(0,0,0,.6)}
+*{box-sizing:border-box}
+html,body{margin:0;overflow-x:hidden}
+body{background:var(--bg);color:var(--ink);font:14px/1.45 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.mono,.num{font-family:"JetBrains Mono",ui-monospace,monospace}
+button{font:inherit}
+.app{display:grid;grid-template-columns:232px minmax(0,1fr);min-height:100vh}
+aside{background:var(--side);color:var(--sideink);position:sticky;top:0;height:100vh;display:flex;flex-direction:column;z-index:6}
+.brand{display:flex;gap:11px;align-items:center;padding:18px 18px 16px}
+.logo{width:40px;height:40px;border-radius:10px;background:var(--y);color:#15171a;display:grid;place-items:center;font-weight:900;font-size:19px}
+.brand b{display:block;color:#fff;font-size:16px;letter-spacing:.5px}
+.brand small{font-size:10.5px;color:#8d939b;text-transform:uppercase;letter-spacing:1.2px}
+.zebra{height:8px;background:repeating-linear-gradient(-45deg,var(--y) 0 12px,#17191c 12px 24px)}
+nav{padding:10px;display:flex;flex-direction:column;gap:2px;flex:1;overflow:auto}
+nav .grp{font-size:10px;letter-spacing:1.4px;color:#6f757d;text-transform:uppercase;padding:12px 12px 4px;font-weight:700}
+nav button{all:unset;cursor:pointer;display:flex;gap:11px;align-items:center;padding:9px 12px;border-radius:8px;color:var(--sideink);font-weight:500;white-space:nowrap}
+nav button svg{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+nav button:hover{background:var(--side2);color:#fff}
+nav button.on{background:var(--side2);color:#fff;box-shadow:inset 3px 0 0 var(--y)}
+nav button .tag{margin-left:auto;font-size:9.5px;background:var(--y);color:#111;border-radius:4px;padding:1px 5px;font-weight:800}
+.sidefoot{padding:14px 18px;font-size:11px;color:#7d838b;border-top:1px solid #3a3f46}
+.sidefoot b{color:#c3c7cd}
+main{min-width:0}
+.top{position:sticky;top:0;z-index:5;background:var(--bg)}
+.topin{display:flex;align-items:center;gap:12px;padding:12px 22px;flex-wrap:wrap}
+.ttl h1{margin:0;font-size:21px;letter-spacing:-.4px;font-weight:800}
+.ttl p{margin:0;color:var(--muted);font-size:12.5px}
+.sp{flex:1}
+.clock{font-family:"JetBrains Mono",monospace;background:var(--card);border:1px solid var(--line);border-radius:9px;padding:7px 12px;font-size:13px;display:flex;gap:8px;align-items:center}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--g);animation:pulse 1.6s infinite}
+.paused .dot{background:var(--o);animation:none}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(46,158,91,.6)}70%{box-shadow:0 0 0 8px rgba(46,158,91,0)}100%{box-shadow:0 0 0 0 rgba(46,158,91,0)}}
+.seg{display:flex;background:var(--card);border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.seg button,.btn{all:unset;cursor:pointer;padding:7px 11px;font-weight:600;font-size:12.5px;color:var(--muted)}
+.seg button.on{background:var(--ink);color:var(--card)}
+.btn{background:var(--card);border:1px solid var(--line);border-radius:9px;color:var(--ink);text-align:center}
+.btn:hover{border-color:var(--muted)}
+.btn.y{background:var(--y);border-color:var(--y);color:#17191c}
+.wrap{padding:16px 22px 28px}
+.sec{display:none}.sec.on{display:block;animation:fade .35s}
+@keyframes fade{from{opacity:0;transform:translateY(5px)}to{opacity:1}}
+.grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px}
+.c2{grid-column:span 2}.c3{grid-column:span 3}.c4{grid-column:span 4}.c5{grid-column:span 5}.c6{grid-column:span 6}.c7{grid-column:span 7}.c8{grid-column:span 8}.c9{grid-column:span 9}.c12{grid-column:span 12}
+/* cards repaginados */
+.card{background:var(--card);border-radius:16px;padding:18px;box-shadow:var(--sh);min-width:0;position:relative}
+.card h3{margin:0 0 14px;font-size:12px;font-weight:800;display:flex;align-items:center;gap:10px;text-transform:uppercase;letter-spacing:.9px}
+.card h3::before{content:"";width:4px;height:16px;border-radius:2px;background:var(--y)}
+.card h3 .hint{margin-left:auto;font-weight:500;color:var(--muted);font-size:11.5px;text-transform:none;letter-spacing:0}
+.ch{position:relative;height:290px}.ch.s{height:230px}
+.click{cursor:pointer;transition:transform .15s,box-shadow .15s}
+.click:hover{transform:translateY(-3px);box-shadow:0 18px 40px -16px rgba(30,35,40,.35)}
+.tile{padding:16px 16px 0;overflow:hidden;display:flex;flex-direction:column}
+.tile .hd{display:flex;align-items:center;gap:10px}
+.tile .ic{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;flex:none}
+.tile .ic svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tile .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;font-weight:700;line-height:1.2}
+.tile .v{font:800 30px/1.1 "JetBrains Mono",monospace;margin:12px 0 4px;letter-spacing:-1px}
+.tile .v small{font-size:13px;color:var(--muted);font-weight:500;margin-left:4px;letter-spacing:0}
+.tile .s{font-size:12px;color:var(--muted);min-height:18px}
+.tile .more{position:absolute;right:14px;top:16px;font-size:11px;font-weight:700;color:var(--muted);opacity:0;transition:.2s}
+.tile:hover .more{opacity:1}
+.spark{width:calc(100% + 32px);height:44px;display:block;margin:10px -16px 0}
+.up{color:var(--g)}.dn{color:var(--r)}.wa{color:var(--o)}
+.chip{display:inline-block;padding:3px 10px;border-radius:99px;font-size:11.5px;font-weight:700;white-space:nowrap}
+.chip.g{background:rgba(46,158,91,.14);color:var(--g)}.chip.r{background:rgba(214,69,69,.13);color:var(--r)}.chip.o{background:rgba(224,123,34,.15);color:var(--o)}.chip.b{background:rgba(47,111,179,.13);color:var(--b)}.chip.k{background:var(--soft);color:var(--muted)}
+ul.list{list-style:none;margin:0;padding:0}
+.alerts li{display:flex;gap:10px;padding:10px 0;border-bottom:1px dashed var(--line);font-size:13px}
+.alerts li:last-child{border:0}
+.alerts i{width:9px;height:9px;border-radius:50%;margin-top:5px;flex:none}
+.feed li{display:grid;grid-template-columns:44px 8px 1fr;gap:8px;padding:7px 0;border-bottom:1px solid var(--line);font-size:12.5px;animation:fade .4s}
+.feed time{font-family:"JetBrains Mono",monospace;color:var(--muted);font-size:11px}
+.feed i{width:8px;height:8px;border-radius:2px;margin-top:5px}
+.live{color:var(--r);font-size:10.5px;font-weight:800;letter-spacing:.9px;display:inline-flex;align-items:center;gap:5px}
+.live::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--r);animation:blink 1s infinite}
+@keyframes blink{50%{opacity:.25}}
+table{width:100%;border-collapse:collapse;font-size:12.8px}
+th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);font-weight:800;padding:9px 8px;border-bottom:2px solid var(--line);white-space:nowrap;position:sticky;top:0;background:var(--card)}
+td{padding:9px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td.num,th.num{text-align:right}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:var(--soft)}
+.tbl{overflow:auto;max-height:420px}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.filters input,.filters select{font:inherit;padding:8px 11px;border-radius:9px;border:1px solid var(--line);background:var(--soft);color:var(--ink)}
+.filters input{flex:1;min-width:160px}
+/* hero */
+.hero{background:linear-gradient(120deg,#22262c,#2f343b 60%,#3a3427);color:#fff;border-radius:18px;padding:22px 24px;display:flex;gap:26px;align-items:center;flex-wrap:wrap;position:relative;overflow:hidden;box-shadow:var(--sh)}
+.hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:6px;background:repeating-linear-gradient(-45deg,var(--y) 0 12px,#17191c 12px 24px)}
+.ring{position:relative;width:132px;height:132px;flex:none}
+.ring svg{transform:rotate(-90deg)}
+.ring .rt{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
+.ring b{font:800 26px "JetBrains Mono",monospace;display:block}
+.ring span{font-size:10.5px;color:#aab0b8;text-transform:uppercase;letter-spacing:1px}
+.hstats{display:flex;gap:28px;flex-wrap:wrap}
+.hstats div span{display:block;font-size:10.5px;color:#9aa0a8;text-transform:uppercase;letter-spacing:1px;font-weight:700}
+.hstats div b{font:800 26px "JetBrains Mono",monospace}
+.eqs{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;max-width:430px}
+.eq{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.07);padding:7px 11px;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer}
+.eq:hover{background:rgba(255,255,255,.14)}
+.eq i{width:9px;height:9px;border-radius:50%}
+.flow{display:flex;align-items:stretch;gap:6px;flex-wrap:wrap}
+.fs{flex:1;min-width:96px;background:var(--soft);border-radius:12px;padding:12px;border-top:3px solid var(--y);cursor:pointer}
+.fs:hover{background:var(--line)}
+.fs .l{font-size:10.5px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);font-weight:800}
+.fs .v{font:800 18px "JetBrains Mono",monospace;margin-top:4px}
+.fs .s{font-size:11.5px;color:var(--muted)}
+.fs.bad{border-top-color:var(--r)}
+.fa{display:grid;place-items:center;color:var(--muted);font-weight:700}
+/* sala de controle */
+.sala{position:relative;height:calc(100vh - 110px);min-height:560px;border-radius:18px;overflow:hidden;background:#cfd6dc;box-shadow:var(--sh)}
+#scene{position:absolute;inset:0;touch-action:none}
+#scene canvas{display:block;width:100%;height:100%;cursor:grab}
+.hud{position:absolute;background:rgba(17,20,24,.84);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#e9eaec;border:1px solid rgba(255,255,255,.08);border-radius:14px;box-shadow:0 14px 36px rgba(0,0,0,.35);z-index:2}
+.hudL{position:absolute;left:14px;top:14px;display:flex;flex-direction:column;gap:8px;align-items:flex-start;z-index:2}
+.hudL .hud{position:static}
+.hud.kp{display:grid;grid-template-columns:repeat(4,128px);gap:6px;padding:7px}
+.kt{background:rgba(255,255,255,.05);border-radius:10px;padding:9px 11px;cursor:pointer;transition:.15s}
+.kt:hover{background:rgba(242,183,5,.16)}
+.kt .l{white-space:nowrap;font-size:9.5px;letter-spacing:.9px;text-transform:uppercase;color:#9aa0a8;font-weight:700}
+.kt .v{font:800 20px "JetBrains Mono",monospace;margin-top:2px}
+.kt .v small{font-size:11px;color:#9aa0a8;font-weight:500}
+.hud.cams{display:flex;gap:4px;padding:5px}
+.hud.cams button{all:unset;cursor:pointer;padding:6px 10px;border-radius:8px;font-size:12px;font-weight:600;color:#c9ccd1}
+.hud.cams button:hover{background:rgba(255,255,255,.1);color:#fff}
+.hud.con{right:14px;top:14px;width:300px;max-height:calc(100% - 28px);overflow:auto;padding:14px}
+.hud.fd{left:14px;bottom:14px;width:390px;padding:12px 14px}
+.hud.fd .feed li{border-color:rgba(255,255,255,.08);font-size:12px;padding:6px 0}
+.hud.fd .feed time{color:#9aa0a8}
+.hud.lg{right:330px;bottom:14px;padding:8px 12px;font-size:11.5px;display:flex;gap:12px;flex-wrap:wrap}
+.hud.lg span{display:flex;align-items:center;gap:6px}.hud.lg i{width:10px;height:10px;border-radius:2px}
+.hud h5{margin:0 0 10px;font-size:10.5px;letter-spacing:1.3px;color:var(--y);text-transform:uppercase;display:flex;align-items:center;gap:8px}
+.hud h5 .live{margin-left:auto}
+#info3d{right:330px;top:14px;width:280px;padding:14px;display:none;font-size:13px}
+.ib h4{margin:0 0 8px;font-size:14px;display:flex;justify-content:space-between;gap:8px;color:#fff}
+.ib h4 button{all:unset;cursor:pointer;color:#9aa0a8;font-size:18px;line-height:1}
+.row{display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px dashed rgba(127,127,127,.3)}
+.row b{font-family:"JetBrains Mono",monospace;text-align:right}
+.acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.ab{all:unset;cursor:pointer;padding:7px 11px;border-radius:8px;font-size:12px;font-weight:700;background:var(--y);color:#17191c}
+.ab.k{background:rgba(127,127,127,.2);color:inherit}
+.ab.r{background:var(--r);color:#fff}
+/* console */
+.cs-grp{margin-bottom:14px}
+.cs-grp>.t{font-size:10px;letter-spacing:1.2px;color:#8d939b;text-transform:uppercase;font-weight:800;margin-bottom:6px}
+.swr{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:13px}
+.sw{all:unset;cursor:pointer;width:38px;height:21px;border-radius:99px;background:#4a4f57;position:relative;transition:.2s;flex:none}
+.sw::after{content:"";position:absolute;width:15px;height:15px;border-radius:50%;background:#fff;top:3px;left:3px;transition:.2s}
+.sw.on{background:var(--g)}.sw.on::after{left:20px}
+.sl{padding:8px 0}
+.sl label{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:4px}
+.sl label b{font-family:"JetBrains Mono",monospace;color:var(--y)}
+input[type=range]{width:100%;accent-color:var(--y)}
+.fbtn{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.fb{all:unset;cursor:pointer;padding:9px 10px;border-radius:9px;background:rgba(255,255,255,.06);font-size:12px;font-weight:600;line-height:1.25;border:1px solid transparent}
+.fb:hover{border-color:rgba(214,69,69,.6)}
+.fb small{display:block;color:#9aa0a8;font-weight:500;font-size:10.5px}
+.fb.on{background:rgba(214,69,69,.25);border-color:var(--r);animation:alarm 1.2s infinite}
+.fb.on small{color:#ffb3b3}
+@keyframes alarm{50%{background:rgba(214,69,69,.1)}}
+.cbtn{all:unset;cursor:pointer;display:block;text-align:center;padding:9px;border-radius:9px;background:var(--y);color:#17191c;font-weight:800;font-size:12.5px;margin-top:8px}
+/* sinóptico */
+.scada{background:#1b1f24;border-radius:18px;padding:16px;color:#d6dadf;box-shadow:var(--sh);display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:14px}
+.scada .hd{grid-column:1/-1;display:flex;align-items:center;gap:12px;font:700 12px "JetBrains Mono",monospace;letter-spacing:1px;color:#8d939b}
+.scada .hd b{color:var(--y)}
+.svgw{display:flex;align-items:center;background:#14171b;border-radius:12px;border:1px solid #2a2f36;overflow:hidden}
+.svgw svg{display:block;width:100%;height:auto}
+.scada .con2{background:#14171b;border:1px solid #2a2f36;border-radius:12px;padding:14px;color:#e9eaec}
+.scada .alm{grid-column:1/-1;background:#14171b;border:1px solid #2a2f36;border-radius:12px;padding:12px 14px}
+.scada table th{background:#14171b;color:#7d838b;border-color:#2a2f36}
+.scada table td{border-color:#262b31;color:#d6dadf}
+.eqg{cursor:pointer}.eqg:hover>.hl{stroke:var(--y);stroke-width:2}
+.flowp{fill:none;stroke-width:5;stroke-linecap:round;stroke:#3a4048}
+.flowp.on{stroke:#3ddc84;stroke-dasharray:10 9;animation:dash .7s linear infinite}
+.flowp.bad{stroke:#ff4d4d;stroke-dasharray:4 6}
+@keyframes dash{to{stroke-dashoffset:-19}}
+.tg rect{fill:#0c0e11;stroke:#2f353c}.tg text{font:700 12px "JetBrains Mono",monospace;fill:#3ddc84}
+.lbl{font:800 11px Inter,sans-serif;fill:#8d939b;letter-spacing:1.2px}
+/* trens */
+.wgrid{display:grid;grid-template-columns:repeat(20,1fr);gap:4px}
+.wc{aspect-ratio:1.5;border-radius:3px;background:var(--line);cursor:pointer}
+.wc:hover{outline:2px solid var(--ink)}
+.wc.cur{outline:2px solid var(--o);outline-offset:1px;animation:blink 1s infinite}
+.pbar{height:12px;border-radius:99px;background:var(--soft);overflow:hidden;margin:10px 0 4px}
+.pbar div{height:100%;background:linear-gradient(90deg,var(--y),var(--g));transition:width .4s}
+.kv{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.kv div{background:var(--soft);border-radius:10px;padding:10px 12px}
+.kv span{display:block;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:700}
+.kv b{font:800 17px "JetBrains Mono",monospace}
+.tid{font:800 28px "JetBrains Mono",monospace;letter-spacing:-1px}
+.gwrap{position:relative;height:200px}
+.gtxt{position:absolute;left:0;right:0;bottom:22px;text-align:center}
+.gtxt b{font:800 32px "JetBrains Mono",monospace;display:block}
+.gtxt span{color:var(--muted);font-size:12px}
+.big{font:900 68px/1 "JetBrains Mono",monospace;color:var(--g);letter-spacing:-3px}
+.safe{display:flex;align-items:center;gap:16px}
+.safe .badge{width:86px;height:86px;border-radius:50%;border:6px solid var(--g);display:grid;place-items:center;font-weight:900;color:var(--g);flex:none;text-align:center;font-size:10.5px;line-height:1.1}
+.mini{display:grid;gap:8px;margin-top:14px}
+.mini div{display:flex;justify-content:space-between;align-items:center;background:var(--soft);border-radius:9px;padding:9px 12px;font-size:13px}
+.mini b{font-family:"JetBrains Mono",monospace}
+/* simulador */
+.esl .sl label{color:var(--ink)}
+.esl .sl label b{color:var(--ink);background:var(--soft);padding:1px 7px;border-radius:6px}
+.esl .sl small{color:var(--muted);font-size:11px}
+.presets{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.res{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.rt2{background:var(--soft);border-radius:12px;padding:12px}
+.rt2 span{font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);font-weight:800}
+.rt2 b{display:block;font:800 22px "JetBrains Mono",monospace;margin:4px 0 2px}
+.rt2 em{font-style:normal;font-size:12px;font-weight:700}
+.verdict{border-radius:12px;padding:14px 16px;margin-bottom:12px;font-size:13.5px;display:flex;gap:12px;align-items:flex-start}
+.verdict b{display:block;font-size:15px}
+/* modal */
+#modal{position:fixed;inset:0;background:rgba(10,12,14,.55);backdrop-filter:blur(3px);z-index:50;display:none;align-items:center;justify-content:center;padding:20px}
+#modal.on{display:flex;animation:fade .2s}
+.mbox{background:var(--card);color:var(--ink);border-radius:18px;width:min(860px,100%);max-height:90vh;overflow:auto;box-shadow:0 30px 80px rgba(0,0,0,.4)}
+.mbox header{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--card);z-index:1}
+.mbox header::before{content:"";width:5px;height:22px;background:var(--y);border-radius:3px}
+.mbox header h3{margin:0;font-size:17px;flex:1}
+.mbox header button{all:unset;cursor:pointer;font-size:22px;color:var(--muted);padding:0 6px}
+.mbody{padding:18px 20px}
+.mgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.mgrid div{background:var(--soft);border-radius:10px;padding:10px 12px}
+.mgrid span{display:block;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:700}
+.mgrid b{font:800 18px "JetBrains Mono",monospace}
+.tl{list-style:none;margin:0;padding:0 0 0 18px;border-left:2px solid var(--line)}
+.tl li{position:relative;padding:0 0 14px 12px}
+.tl li::before{content:"";position:absolute;left:-25px;top:3px;width:12px;height:12px;border-radius:50%;background:var(--card);border:3px solid var(--y)}
+.tl li b{font-family:"JetBrains Mono",monospace;margin-right:8px}
+.foot{color:var(--muted);font-size:11.5px;text-align:center;padding:20px 0 0}
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(100px);background:#1c2025;color:#fff;padding:11px 18px;border-radius:12px;font-weight:600;font-size:13px;z-index:60;transition:.3s;box-shadow:0 10px 30px rgba(0,0,0,.3);border-left:4px solid var(--y);opacity:0;pointer-events:none}
+#toast.on{transform:translateX(-50%);opacity:1}
+#tvbar{display:none}
+body.tv aside{display:none}
+body.tv .app{grid-template-columns:minmax(0,1fr)}
+body.tv .topin .tools{display:none}
+body.tv #tvbar{display:flex;align-items:center;gap:14px;padding:8px 22px;background:var(--side);color:#fff;font-weight:700}
+#tvbar .pr{flex:1;height:5px;background:#3a3f46;border-radius:99px;overflow:hidden}
+#tvbar .pr div{height:100%;background:var(--y);width:0}
+@media(max-width:1300px){.hud.kp{grid-template-columns:repeat(2,128px)}.hud.lg{display:none}}
+@media(max-width:1200px){.c2{grid-column:span 4}.c3{grid-column:span 6}.c4,.c5,.c7,.c8,.c9,.c6{grid-column:span 12}.scada{grid-template-columns:1fr}.res{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:900px){
+ .app{grid-template-columns:minmax(0,1fr)}
+ aside{position:sticky;height:auto;top:0;min-width:0}
+ .brand{padding:10px 16px}.sidefoot,nav .grp{display:none}
+ nav{flex-direction:row;overflow-x:auto;padding:6px 10px 8px}
+ nav button.on{box-shadow:inset 0 -3px 0 var(--y)}
+ .top{position:relative}
+ .topin,.wrap{padding-left:14px;padding-right:14px}
+ .sala{height:auto;min-height:0;display:flex;flex-direction:column;gap:10px;background:none;box-shadow:none;overflow:visible}
+ #scene{position:relative;height:58vh;border-radius:16px;overflow:hidden;background:#cfd6dc;order:1}
+ .hud{position:static;width:auto!important;backdrop-filter:none}
+ .hudL{display:contents}
+ .hud.kp{order:0;grid-template-columns:repeat(2,1fr)}
+ .hud.cams{order:2;overflow-x:auto}
+ #info3d{order:3}
+ .hud.con{order:4;max-height:none}
+ .hud.fd{order:5}
+ .hero{padding:18px}.eqs{margin-left:0}
+ .mgrid{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:640px){.c2,.c3{grid-column:span 6}.tile .v{font-size:22px}.wgrid{grid-template-columns:repeat(10,1fr)}.ttl h1{font-size:17px}.res{grid-template-columns:1fr 1fr}.tile .l{font-size:10px}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside>
+ <div class="brand"><div class="logo">B</div><div><b>BITOLA</b><small>Terminal Ferroviário</small></div></div>
+ <div class="zebra"></div>
+ <nav id="nav"></nav>
+ <div class="sidefoot">Terminal rodoferroviário<br><b>Açúcar VHP · rodo → ferro</b><br>Dados simulados para demonstração</div>
+</aside>
+<main>
+ <div class="top">
+  <div id="tvbar"><span>MODO TV</span><span id="tvsec">—</span><div class="pr"><div id="tvpr"></div></div><span id="tvclock" class="mono"></span><button class="btn y" id="tvexit">Sair</button></div>
+  <div class="topin">
+   <div class="ttl"><h1 id="ttl">Sala de Controle</h1><p id="sub"></p></div>
+   <div class="sp"></div>
+   <div class="clock" id="clockBox"><span class="dot"></span><span id="clock">—</span></div>
+   <div class="tools" style="display:flex;gap:8px;flex-wrap:wrap">
+    <div class="seg" id="speed"><button data-sp="1">1×</button><button data-sp="60" class="on">60×</button><button data-sp="300">300×</button></div>
+    <button class="btn" id="pause">Pausar</button>
+    <button class="btn" id="theme">Tema escuro</button>
+    <button class="btn y" id="tvbtn">Modo TV</button>
+   </div>
+  </div>
+  <div class="zebra" style="height:4px"></div>
+ </div>
+ <div class="wrap">
+
+ <!-- SALA DE CONTROLE -->
+ <section class="sec on" id="s-sala">
+  <div class="sala">
+   <div id="scene"></div>
+   <div class="hudL"><div class="hud kp">
+    <div class="kt" data-act="drill:emb"><div class="l">Embarcado hoje</div><div class="v"><span id="hEmb">—</span><small> t</small></div></div>
+    <div class="kt" data-act="drill:est"><div class="l">Estoque</div><div class="v"><span id="hEst">—</span><small> t</small></div></div>
+    <div class="kt" data-act="drill:fila"><div class="l">Fila</div><div class="v"><span id="hFila">—</span><small> cam</small></div></div>
+    <div class="kt" data-act="drill:trem"><div class="l">Trem · vagões</div><div class="v"><span id="hTrem">—</span></div></div>
+   </div>
+   <div class="hud cams"><button data-cam="geral">Visão geral</button><button data-cam="rec">Recebimento</button><button data-cam="trem">Torre e trem</button><button data-cam="topo">Planta</button></div></div>
+   <div class="hud con" id="con1"></div>
+   <div class="hud fd"><h5>Eventos <span class="live">AO VIVO</span></h5><ul class="list feed" id="feedH"></ul></div>
+   <div class="hud lg"><span><i style="background:#2e9e5b"></i>Livre</span><span><i style="background:#e07b22"></i>Operando</span><span><i style="background:#d64545"></i>Falha</span><span style="opacity:.7">Arraste · zoom · clique nos itens</span></div>
+   <div class="hud" id="info3d"></div>
+  </div>
+ </section>
+
+ <!-- SINÓPTICO -->
+ <section class="sec" id="s-sin">
+  <div class="scada">
+   <div class="hd"><b>■</b> SUPERVISÓRIO · TERMINAL FERROVIÁRIO · CLIQUE NOS EQUIPAMENTOS <span class="sp"></span><span id="sinClock"></span></div>
+   <div class="svgw" id="svgw"></div>
+   <div class="con2" id="con2"></div>
+   <div class="alm"><div style="font:800 10.5px Inter;letter-spacing:1.3px;color:var(--y);margin-bottom:8px">ALARMES E ESTADOS</div><div class="tbl" style="max-height:200px"><table><thead><tr><th>Hora</th><th>Tag</th><th>Descrição</th><th>Prioridade</th></tr></thead><tbody id="tAlm"></tbody></table></div></div>
+  </div>
+ </section>
+
+ <!-- INDICADORES -->
+ <section class="sec" id="s-ind"><div class="grid">
+  <div class="c12 hero">
+   <div class="ring"><svg width="132" height="132"><circle cx="66" cy="66" r="56" stroke="rgba(255,255,255,.12)" stroke-width="12" fill="none"/><circle id="ringC" cx="66" cy="66" r="56" stroke="#f2b705" stroke-width="12" fill="none" stroke-linecap="round" stroke-dasharray="352" stroke-dashoffset="352" style="transition:.6s"/></svg><div class="rt"><div><b id="ringV">—</b><span>da meta do dia</span></div></div></div>
+   <div><div style="font-size:12px;color:#aab0b8;text-transform:uppercase;letter-spacing:1.2px;font-weight:700" id="heroT">Turno A</div><div style="font-size:22px;font-weight:800;margin:4px 0 14px" id="heroH">—</div>
+    <div class="hstats"><div><span>Embarcado</span><b id="hsE">—</b></div><div><span>Recebido</span><b id="hsR">—</b></div><div><span>Ritmo atual</span><b id="hsT">—</b></div></div></div>
+   <div class="eqs" id="eqs"></div>
+  </div>
+  <div id="kpiInd" style="display:contents"></div>
+  <div class="card c8"><h3>Embarque diário — programado × realizado <span class="hint">clique numa barra para ver o dia</span></h3><div class="ch"><canvas id="chEmb"></canvas></div></div>
+  <div class="card c4"><h3>Alertas da operação</h3><ul class="list alerts" id="alerts"></ul></div>
+  <div class="card c8"><h3>Fluxo do terminal agora <span class="hint">clique em uma etapa</span></h3><div class="flow" id="flow"></div></div>
+  <div class="card c4"><h3>Eventos <span class="live" style="margin-left:auto">AO VIVO</span></h3><ul class="list feed" id="feed" style="max-height:250px;overflow:auto"></ul></div>
+ </div></section>
+
+ <!-- RECEBIMENTO -->
+ <section class="sec" id="s-rec"><div class="grid">
+  <div id="kpiRec" style="display:contents"></div>
+  <div class="card c8"><h3>Recebido × embarcado por hora — hoje <span class="hint">clique numa hora</span></h3><div class="ch"><canvas id="chHora"></canvas></div></div>
+  <div class="card c4"><h3>Ciclo por transportadora <span class="hint">min · meta 45</span></h3><div class="ch"><canvas id="chTransp"></canvas></div></div>
+  <div class="card c12"><h3>Caminhões no terminal <span class="hint" id="tRecN"></span></h3>
+   <div class="filters"><input id="fBusca" placeholder="Buscar placa ou transportadora…"><select id="fTransp"><option value="">Todas as transportadoras</option></select><select id="fStatus"><option value="">Todos os status</option><option>Na fila</option><option>Descarregando</option><option>Concluído</option></select></div>
+   <div class="tbl"><table><thead><tr><th>Placa</th><th>Transportadora</th><th>Tipo</th><th class="num">Líquido (t)</th><th>Entrada</th><th>Saída</th><th class="num">Ciclo (min)</th><th>Status</th></tr></thead><tbody id="tRec"></tbody></table></div>
+  </div>
+ </div></section>
+
+ <!-- TRENS -->
+ <section class="sec" id="s-trens"><div class="grid">
+  <div class="card c5"><h3>Composição na torre</h3><div id="trainCard"></div></div>
+  <div class="card c7"><h3>Mapa de vagões <span class="hint">clique num vagão</span></h3><div class="wgrid" id="wgrid"></div>
+   <div style="display:flex;gap:14px;margin-top:12px;font-size:12px;color:var(--muted)"><span><b style="color:var(--g)">■</b> carregado</span><span><b style="color:var(--y)">■</b> em carga</span><span>■ vazio</span></div></div>
+  <div class="card c6"><h3>Estadia dos últimos trens <span class="hint">h · meta 24 h · clique</span></h3><div class="ch"><canvas id="chEst"></canvas></div></div>
+  <div class="card c6"><h3>Histórico de composições</h3><div class="tbl" style="max-height:290px"><table><thead><tr><th>Trem</th><th>Chegada</th><th class="num">Toneladas</th><th class="num">Estadia</th><th>Status</th></tr></thead><tbody id="tTrem"></tbody></table></div></div>
+ </div></section>
+
+ <!-- ARMAZÉM -->
+ <section class="sec" id="s-arm"><div class="grid">
+  <div class="card c4"><h3>Ocupação do armazém <span class="hint">cap. 60.000 t</span></h3><div class="gwrap"><canvas id="chGauge"></canvas><div class="gtxt"><b id="gPct">—</b><span id="gT">—</span></div></div>
+   <div class="mini"><div>Entradas hoje <b id="aIn">—</b></div><div>Saídas hoje <b id="aOut">—</b></div><div>Cobertura p/ embarque <b id="aCob">—</b></div></div></div>
+  <div class="card c8"><h3>Estoque no armazém — 30 dias <span class="hint">t</span></h3><div class="ch"><canvas id="chStock"></canvas></div></div>
+  <div class="card c12"><h3>Qualidade por lote — açúcar VHP <span class="hint">Pol ≥ 99,30 °Z · Umidade ≤ 0,15% · Cor ≤ 1.200 UI · clique no lote</span></h3>
+   <div class="tbl"><table><thead><tr><th>Lote</th><th>Origem</th><th class="num">Volume (t)</th><th class="num">Pol (°Z)</th><th class="num">Umidade (%)</th><th class="num">Cor ICUMSA</th><th class="num">Cinzas (%)</th><th>Laudo</th></tr></thead><tbody id="tQual"></tbody></table></div></div>
+ </div></section>
+
+ <!-- GESTÃO -->
+ <section class="sec" id="s-gestao"><div class="grid">
+  <div class="card c7"><h3>Orçado × realizado por centro de custo <span class="hint">R$ mil · clique para abrir</span></h3><div class="ch"><canvas id="chOrc"></canvas></div></div>
+  <div class="card c5"><h3>Pareto de paradas <span class="hint">horas no mês · ao vivo</span></h3><div class="ch"><canvas id="chPar"></canvas></div></div>
+  <div class="card c6"><h3>Custo por tonelada embarcada <span class="hint">R$/t · 12 meses</span></h3><div class="ch s"><canvas id="chCt"></canvas></div></div>
+  <div class="card c6"><h3>Indicadores do mês — meta × real</h3><div class="tbl"><table><thead><tr><th>Indicador</th><th class="num">Meta</th><th class="num">Real</th><th>Status</th></tr></thead><tbody id="tInd"></tbody></table></div></div>
+ </div></section>
+
+ <!-- PESSOAS -->
+ <section class="sec" id="s-pessoas"><div class="grid">
+  <div class="card c4"><h3>Segurança</h3>
+   <div class="safe"><div class="badge">SEM<br>ACIDENTE<br>C/ AFAST.</div><div><div class="big" id="semAc">—</div><div style="color:var(--muted)">dias · recorde 380</div></div></div>
+   <div class="mini"><div>Quase-acidentes reportados (mês) <b>11</b></div><div>Inspeções de segurança <b>42/45</b></div><div>DDS realizados <b class="up">100%</b></div><div>Reciclagens NR-11 a vencer (30d) <b class="wa">3</b></div></div></div>
+  <div class="card c8"><h3>Absenteísmo — 12 meses <span class="hint">% · meta 3%</span></h3><div class="ch"><canvas id="chAbs"></canvas></div></div>
+  <div class="card c12"><h3>Equipe do terminal — escala de hoje <span class="hint" id="eqN"></span></h3>
+   <div class="filters"><select id="fTurno"><option value="">Todos os turnos</option><option>A</option><option>B</option><option>C</option><option>ADM</option></select></div>
+   <div class="tbl"><table><thead><tr><th>Colaborador</th><th>Função</th><th>Turno</th><th>Horário</th><th>Treinamentos</th><th>Status</th></tr></thead><tbody id="tEq"></tbody></table></div></div>
+ </div></section>
+
+ <!-- SIMULADOR -->
+ <section class="sec" id="s-esse"><div class="grid">
+  <div class="card c4 esl"><h3>Monte o cenário</h3>
+   <div class="presets"><button class="btn" data-pre="pico">Pico de safra</button><button class="btn" data-pre="moega">+1 moega</button><button class="btn" data-pre="torre">Torre 1.800 t/h</button><button class="btn" data-pre="chuva">Período chuvoso</button><button class="btn" data-pre="base">Atual</button></div>
+   <div id="esIn"></div>
+   <button class="cbtn" data-act="esse:apply">Aplicar na simulação ao vivo</button>
+   <div style="font-size:11.5px;color:var(--muted);margin-top:8px">Fila calculada por teoria de filas (Erlang C, modelo M/M/c). Moegas acima de 2 ficam só no cenário.</div>
+  </div>
+  <div class="c8" style="display:flex;flex-direction:column;gap:16px">
+   <div class="card"><h3>Resultado do cenário <span class="hint">comparado com a operação atual</span></h3><div id="verdict"></div><div class="res" id="esOut"></div></div>
+   <div class="grid" style="gap:16px">
+    <div class="card c6"><h3>Capacidade diária <span class="hint">t/dia</span></h3><div class="ch s"><canvas id="chEs1"></canvas></div></div>
+    <div class="card c6"><h3>Fila × chegada de caminhões <span class="hint">curva do cenário</span></h3><div class="ch s"><canvas id="chEs2"></canvas></div></div>
+   </div>
+  </div>
+ </div></section>
+
+ <div class="foot">Bitola · painel de demonstração com dados fictícios · desenvolvido por Marcelo José Gomes Parreira</div>
+ </div>
+</main>
+</div>
+<div id="modal"><div class="mbox"><header><h3 id="mT"></h3><button data-close>×</button></header><div class="mbody" id="mB"></div></div></div>
+<div id="toast"></div>
+
+<script>
+/* ===================== util ===================== */
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+function rng(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const R=rng(1010),rand=(a,b)=>a+(b-a)*R(),ri=(a,b)=>Math.floor(rand(a,b+1)),pick=a=>a[Math.floor(R()*a.length)];
+const mr=(a,b)=>a+(b-a)*Math.random(),pk=a=>a[Math.floor(Math.random()*a.length)];
+const fmt=(n,d=0)=>Number(n).toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d});
+const hhmm=s=>{s=((s%86400)+86400)%86400;return String(Math.floor(s/3600)).padStart(2,'0')+':'+String(Math.floor(s%3600/60)).padStart(2,'0')};
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const set=(id,v)=>{const e=document.getElementById(id);if(e&&e.innerHTML!==String(v))e.innerHTML=v};
+const chip=(t,c)=>`<span class="chip ${c}">${t}</span>`;
+const row=(k,v)=>`<div class="row"><span>${k}</span><b>${v}</b></div>`;
+function spark(v,c){const mn=Math.min(...v),mx=Math.max(...v),w=200,h=44;const p=v.map((x,i)=>[i/(v.length-1)*w,h-4-((x-mn)/((mx-mn)||1))*(h-12)]);const pl=p.map(q=>q.map(z=>z.toFixed(1)).join(',')).join(' ');return`<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><polygon points="0,${h} ${pl} ${w},${h}" fill="${c}" opacity=".16"/><polyline points="${pl}" fill="none" stroke="${c}" stroke-width="2.2" vector-effect="non-scaling-stroke"/></svg>`}
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('on'),2600)}
+const BASE=new Date(2026,10,9),DIAS=['DOM','SEG','TER','QUA','QUI','SEX','SÁB'];
+
+/* ===================== dados base ===================== */
+const CAPV=96,NV=80,META_DIA=14000;
+const TRANSP=['TransMinas','Rodo Vale','Expresso Triângulo','Logcana','Rápido Pontal','TransGrãos'];
+const TIPOS=[{n:'Bitrem',c:37,seg:[5.6,5.6]},{n:'Rodotrem',c:54,seg:[4.6,4.6,4.6]},{n:'Carreta LS',c:32,seg:[9.4]}];
+const LT='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const placa=()=>{const l=()=>LT[Math.floor(Math.random()*26)],d=()=>Math.floor(Math.random()*10);return l()+l()+l()+d()+l()+d()+d()};
+const hist={lab:[],prog:[],real:[],stock:[]};let st=34000;
+for(let i=30;i>=1;i--){const d=new Date(2026,10,9-i);hist.lab.push(String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0'));const p=ri(13,16)*1000;hist.prog.push(p);hist.real.push(Math.round(p*rand(.8,1.07)));st=Math.max(16000,Math.min(55000,st+rand(-3600,3700)));hist.stock.push(Math.round(st))}
+const trainHist=[];
+for(let i=0;i<14;i++){const d=new Date(2026,10,1+Math.floor(i*.55),ri(0,23),ri(0,59));const est=rand(15.5,31);trainHist.push({id:'T-'+(4458+i),lab:String(d.getDate()).padStart(2,'0')+'/11 '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'),est,t:Math.round(rand(7480,7680)),vag:80,par:pick(['—','Chuva 2,1 h','Falta de caminhão 1,4 h','Correia 0,8 h','—'])})}
+const COST_CC=['Operação ferroviária','Pá carregadeira e equip.','Manutenção','Pessoal','Energia elétrica','Serviços terceiros'];
+const ORC=[420,180,150,310,95,120],REAL=[438,171,182,305,101,133];
+const CCITEMS=[[['Frete ferroviário (rateio)',.62],['Manobras e posicionamento',.21],['Taxas de pátio',.17]],[['Locação pá carregadeira',.48],['Combustível',.34],['Pneus e peças',.18]],[['Correias e roletes',.39],['Rolamentos e redutores',.22],['Serviço terceirizado',.27],['Lubrificantes',.12]],[['Salários e encargos',.78],['Horas extras',.12],['Benefícios',.10]],[['Energia — correias e torre',.71],['Iluminação de pátio',.18],['Demanda contratada',.11]],[['Limpeza de vagões',.41],['Vigilância',.36],['Laboratório externo',.23]]];
+const PAR=[['Falta de vagão',46],['Manutenção correia',31],['Chuva',24],['Falta de caminhão',15],['Falha na balança',9],['Troca de turno',6],['Outros',5]];
+const MES=['dez','jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov'];
+const CT=[11.4,11.9,11.6,11.2,10.9,10.7,10.5,10.8,10.4,10.6,10.5,10.62],ABS=[3.4,2.9,3.1,2.6,2.8,3.6,2.4,2.2,2.7,2.5,2.1,2.3];
+const QUAL=Array.from({length:9},(_,i)=>{const pol=rand(99.18,99.62),um=rand(.07,.17),cor=ri(760,1260),cz=rand(.04,.11);return{id:'L-26'+String(11-i).padStart(2,'0'),org:pick(['Usina — safra 26/27','Usina — safra 26/27','Transferência']),vol:ri(2800,6400),pol,um,cor,cz,ok:pol>=99.3&&um<=.15&&cor<=1200}});
+
+/* ===================== simulação ===================== */
+const FAILS={correia:{n:'Falha na correia TC-02',s:'para a torre',d:5400,tag:'TC-02'},chuva:{n:'Chuva',s:'suspende embarque',d:7200,tag:'MET-01'},vagao:{n:'Falta de vagão',s:'atrasa o trem',d:21600,tag:'FERROVIA'},balanca:{n:'Falha na balança',s:'trava a fila',d:2700,tag:'BAL-01'},pico:{n:'Pico de caminhões',s:'chegada ×2,2',d:7200,tag:'PORT-01'}};
+const S={t:6*3600,abs:6*3600,day:0,speed:60,run:true,stock:38450,cap:60000,shipped:0,recv:0,trucks:0,cycleSum:0,cycleN:0,
+queue:[],bal:null,moega:[null,null],exiting:[],nextArr:90,train:null,nextTrain:0,hourRecv:Array(24).fill(0),hourShip:Array(24).fill(0),
+log:[],records:[],semAc:214,gate:0,dirty:{feed:1,rec:1,trem:1},
+ctrl:{moega:[true,true],tower:true,rate:1220,arr:1,desc:1},fail:{correia:0,chuva:0,vagao:0,balanca:0,pico:0},failT:{}};
+let TID=1,TN=4473;
+function newTruck(ent){const tp=pk(TIPOS);return{id:TID++,placa:placa(),transp:pk(TRANSP),tipo:tp.n,seg:tp.seg,liq:tp.c*mr(.965,1),ent:ent??S.abs,stage:'fila'}}
+const visOn=()=>!!(V.r&&cur==='sala'&&!document.hidden);
+function ev(type,msg){S.log.unshift({t:S.t,type,msg});if(S.log.length>80)S.log.pop();S.dirty.feed=1}
+for(let h=0;h<6;h++){S.hourRecv[h]=mr(520,760);S.hourShip[h]=mr(600,1100)}
+S.recv=S.hourRecv.reduce((a,b)=>a+b,0);S.shipped=S.hourShip.reduce((a,b)=>a+b,0);S.trucks=Math.round(S.recv/43);S.cycleSum=S.trucks*39;S.cycleN=S.trucks;
+for(let i=0;i<26;i++){const tk=newTruck();tk.sai=6*3600-i*780-mr(0,300);tk.ciclo=mr(27,58);tk.ent=tk.sai-tk.ciclo*60;tk.ini=tk.ent+mr(.35,.6)*tk.ciclo*60;tk.stage='saida';S.records.push(tk)}
+for(let i=0;i<3;i++)S.queue.push(newTruck(S.abs-mr(60,600)));
+S.train={id:'T-4472',wagons:new Array(NV).fill(0),idx:22,status:'carregando',rem:0,cheg:S.abs-2.4*3600,block:null};
+for(let i=0;i<22;i++)S.train.wagons[i]=CAPV;
+[['info','Início do turno A — DDS realizado com a equipe'],['train','T-4472: 20/80 vagões carregados'],['ok','Laudo do lote L-2611 liberado pelo laboratório'],['truck','Fila da balança normalizada']].forEach(e=>ev(...e));
+function newTrain(){S.train={id:'T-'+(TN++),wagons:new Array(NV).fill(0),idx:0,status:'manobra',rem:2400,cheg:S.abs,block:null};ev('train',`${S.train.id} chegou ao terminal — manobra de posicionamento (80 vagões HFT)`)}
+const loaded=T=>T.wagons.reduce((a,b)=>a+b,0);
+const parAdd=(n,dt)=>{const p=PAR.find(x=>x[0]===n);if(p)p[1]+=dt/3600};
+function blockReason(){if(S.fail.correia>0)return'Falha na correia';if(S.fail.chuva>0)return'Chuva';if(!S.ctrl.tower)return'Parada manual';if(S.stock<15)return'Sem estoque';return null}
+const BMAP={'Falha na correia':'Manutenção correia','Chuva':'Chuva','Parada manual':'Outros','Sem estoque':'Falta de caminhão'};
+function step(dt){
+ S.t+=dt;S.abs+=dt;
+ if(S.t>=86400){S.t-=86400;S.day++;S.shipped=S.recv=S.trucks=S.cycleSum=S.cycleN=0;S.hourRecv.fill(0);S.hourShip.fill(0);S.semAc++;ev('info','Virada do dia — fechamento diário gerado')}
+ const h=Math.floor(S.t/3600);
+ for(const k in S.fail)if(S.fail[k]>0){S.fail[k]-=dt;if(S.fail[k]<=0){S.fail[k]=0;ev('ok',`${FAILS[k].n} — normalizado`)}}
+ S.nextArr-=dt;
+ if(S.nextArr<=0){if(S.queue.length<14){const tk=newTruck();S.queue.push(tk);S.gate=1;ev('truck',`${tk.placa} (${tk.transp}) entrou na portaria · ${tk.tipo}`);S.dirty.rec=1}
+  const peak=(h>=7&&h<12)||(h>=14&&h<18)?.8:1.2;S.nextArr=mr(170,430)*peak/(S.ctrl.arr*(S.fail.pico>0?2.2:1))}
+ // balança: o caminhão só pesa quando chega fisicamente na plataforma
+ if(!S.bal&&S.queue.length){const tk=S.queue.shift();tk.stage='bal';S.bal={tk,rem:mr(90,150)};S.dirty.rec=1}
+ if(S.bal&&!S.fail.balanca){const b=S.bal;if(b.tk.atBal||!visOn())b.rem-=dt;
+  if(b.rem<=0){const i=[0,1].find(k=>!S.moega[k]&&S.ctrl.moega[k]);if(i!==undefined){const tk=b.tk;tk.stage='moega';tk.ini=S.abs;tk.moega=i;const r0=mr(380,540)*S.ctrl.desc*(S.fail.chuva>0?1.35:1);S.moega[i]={tk,rem:r0,tot:r0};S.bal=null;ev('scale',`${tk.placa} pesado na balança · ${fmt(tk.liq,1)} t líquidas → Moega ${i+1}`);S.dirty.rec=1}}}
+ // moegas: a descarga só conta quando o caminhão está posicionado
+ for(let i=0;i<2;i++){const m=S.moega[i];if(!m)continue;if(m.tk.atM||!visOn())m.rem-=dt;
+  if(m.rem<=0){const tk=m.tk;tk.stage='saida';tk.sai=S.abs;tk.ciclo=(S.abs-tk.ent)/60;S.stock=Math.min(S.cap,S.stock+tk.liq);S.recv+=tk.liq;S.hourRecv[h]+=tk.liq;S.trucks++;S.cycleSum+=tk.ciclo;S.cycleN++;S.records.unshift(tk);if(S.records.length>120)S.records.pop();S.exiting.push(tk);S.moega[i]=null;S.dirty.rec=1}}
+ if(S.fail.balanca>0&&S.bal)parAdd('Falha na balança',dt*.3);
+ const T=S.train;
+ if(!T){S.nextTrain-=dt;if(S.fail.vagao>0){if(S.nextTrain<=0)parAdd('Falta de vagão',dt)}else if(S.nextTrain<=0)newTrain()}
+ else if(T.status==='manobra'){T.rem-=dt;if(T.rem<=0){T.status='carregando';ev('train',`${T.id} posicionado na torre — carregamento iniciado`)}}
+ else if(T.status==='carregando'){const b=blockReason();T.block=b;
+  if(b){if(T.lastBlock!==b){ev('alert',`${T.id} parado: ${b.toLowerCase()}`);T.lastBlock=b}parAdd(BMAP[b],dt)}
+  else{if(T.lastBlock){ev('train',`${T.id}: carregamento retomado`);T.lastBlock=null}
+   let q=S.ctrl.rate/3600*dt;
+   while(q>1e-9&&T.idx<NV){const x=Math.min(q,CAPV-T.wagons[T.idx],S.stock);if(x<=0)break;T.wagons[T.idx]+=x;S.stock-=x;S.shipped+=x;S.hourShip[h]+=x;q-=x;if(T.wagons[T.idx]>=CAPV-1e-6){T.wagons[T.idx]=CAPV;T.idx++;if(T.idx%10===0&&T.idx<NV)ev('train',`${T.id}: ${T.idx}/80 vagões carregados`)}}
+   if(T.idx>=NV){T.status='liberacao';T.rem=1800;T.block=null;ev('ok',`${T.id} formado · ${fmt(loaded(T))} t — conferência e emissão de NF`)}}}
+ else if(T.status==='liberacao'){T.rem-=dt;if(T.rem<=0){T.status='partida';T.rem=900;const est=(S.abs-T.cheg)/3600;const d=new Date(BASE.getTime()+T.cheg*1000);trainHist.push({id:T.id,lab:String(d.getDate()).padStart(2,'0')+'/11 '+hhmm(T.cheg),est,t:Math.round(loaded(T)),vag:80,par:'—'});S.dirty.trem=1;ev('train',`${T.id} partiu rumo ao porto · estadia ${fmt(est,1)} h`)}}
+ else if(T.status==='partida'){T.rem-=dt;if(T.rem<=0){S.train=null;S.nextTrain=mr(2.5,4)*3600}}
+ S.exiting=S.exiting.filter(tk=>visOn()?!tk.gone:S.abs-tk.sai<700).slice(-30);
+}
+const STL={manobra:['Manobra','o'],carregando:['Carregando','b'],liberacao:['Conferência / NF','g'],partida:['Partindo','g']};
+const trainStatus=T=>T.status==='carregando'&&T.block?['Parado — '+T.block.toLowerCase(),'r']:STL[T.status];
+const loadingNow=()=>S.train&&S.train.status==='carregando'&&!S.train.block;
+
+/* ===================== ações ===================== */
+function act(a){const [k,v]=a.split(':');
+ if(k==='moega'){const i=+v;S.ctrl.moega[i]=!S.ctrl.moega[i];ev(S.ctrl.moega[i]?'ok':'alert',`Moega ${i+1} ${S.ctrl.moega[i]?'liberada':'bloqueada'} pelo operador`);toast(`Moega ${i+1} ${S.ctrl.moega[i]?'liberada':'bloqueada'}`)}
+ else if(k==='torre'){S.ctrl.tower=!S.ctrl.tower;ev(S.ctrl.tower?'ok':'alert',`Torre ${S.ctrl.tower?'religada':'parada'} pelo operador`);toast(`Torre ${S.ctrl.tower?'religada':'parada'}`)}
+ else if(k==='trem'){if(S.train)toast('Já existe composição na torre');else if(S.fail.vagao)toast('Sem vagões disponíveis — resolva a falta de vagão');else{S.nextTrain=Math.min(S.nextTrain,600);ev('train','Próximo trem solicitado à ferrovia — chegada em ~10 min');toast('Trem solicitado')}}
+ else if(k==='fail'){if(S.fail[v]>0){S.fail[v]=0;ev('ok',`${FAILS[v].n} — resolvido pelo operador`);toast('Ocorrência resolvida')}else{S.fail[v]=FAILS[v].d;S.failT[v]=S.t;ev('alert',`${FAILS[v].n} — ${FAILS[v].s}`);toast(`⚠ ${FAILS[v].n}`)}}
+ else if(k==='drill')drill(a.slice(6));
+ else if(k==='esse')esApply();
+ updConsole()}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(b){e.stopPropagation();act(b.dataset.act)}});
+
+/* ===================== console ===================== */
+function consoleHTML(){return`<h5>Console de operação</h5>
+ <div class="cs-grp"><div class="t">Equipamentos</div>
+  <div class="swr">Moega 1<button class="sw" data-act="moega:0"></button></div>
+  <div class="swr">Moega 2<button class="sw" data-act="moega:1"></button></div>
+  <div class="swr">Torre de carregamento<button class="sw" data-act="torre"></button></div>
+  <div class="sl"><label>Taxa da torre <b data-v="rate"></b></label><input type="range" min="800" max="1800" step="20" data-ctl="rate"></div>
+  <div class="sl"><label>Ritmo de chegada <b data-v="arr"></b></label><input type="range" min=".5" max="2.5" step=".1" data-ctl="arr"></div>
+  <button class="cbtn" data-act="trem">Chamar próximo trem</button></div>
+ <div class="cs-grp"><div class="t">Simular ocorrência</div><div class="fbtn">${Object.entries(FAILS).map(([k,f])=>`<button class="fb" data-act="fail:${k}" data-f="${k}">${f.n.replace(' TC-02','')}<small>${f.s}</small></button>`).join('')}</div></div>`}
+$('#con1').innerHTML=consoleHTML();$('#con2').innerHTML=consoleHTML();
+document.addEventListener('input',e=>{const c=e.target.dataset.ctl;if(!c)return;S.ctrl[c]=+e.target.value;updConsole()});
+function updConsole(){
+ $$('[data-act="moega:0"]').forEach(b=>b.classList.toggle('on',S.ctrl.moega[0]));$$('[data-act="moega:1"]').forEach(b=>b.classList.toggle('on',S.ctrl.moega[1]));$$('[data-act="torre"]').forEach(b=>b.classList.toggle('on',S.ctrl.tower));
+ $$('[data-ctl]').forEach(i=>{if(document.activeElement!==i)i.value=S.ctrl[i.dataset.ctl]});
+ $$('[data-v="rate"]').forEach(b=>b.textContent=fmt(S.ctrl.rate)+' t/h');$$('[data-v="arr"]').forEach(b=>b.textContent=fmt(S.ctrl.arr,1)+'×');
+ $$('.fb').forEach(b=>{const k=b.dataset.f,on=S.fail[k]>0;b.classList.toggle('on',on);const sm=b.querySelector('small');const t=on?`ativo · ${Math.ceil(S.fail[k]/60)} min · resolver`:FAILS[k].s;if(sm.textContent!==t)sm.textContent=t})}
+
+/* ===================== navegação ===================== */
+const IC={sala:'<rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/>',sin:'<path d="M3 12h4l3-8 4 16 3-8h4"/>',ind:'<rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/>',rec:'<path d="M1 5h13v11H1zM14 9h4l4 4v3h-8z"/><circle cx="5.5" cy="18.5" r="2"/><circle cx="17.5" cy="18.5" r="2"/>',trens:'<rect x="5" y="3" width="14" height="13" rx="3"/><path d="M5 10h14M8 16l-1 4h10l-1-4"/>',arm:'<path d="M3 21V9l9-6 9 6v12"/><path d="M7 21v-8h10v8M7 17h10"/>',gestao:'<path d="M4 20V11M10 20V4M16 20v-7M2 20h20"/>',pessoas:'<path d="M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5z"/><path d="M9 12l2 2 4-4"/>',esse:'<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/>'};
+const SECS=[['Operação'],['sala','Sala de Controle','Gêmeo digital 3D — opere o terminal e simule ocorrências','LIVE'],['sin','Sinóptico','Supervisório do processo — portaria até o trem'],['Análise'],['ind','Indicadores','Resumo do turno e do dia'],['rec','Recebimento','Portaria, balança, moegas e ciclo dos caminhões'],['trens','Trens','Composição atual, vagões, estadia e histórico'],['arm','Armazém','Estoque, ocupação e qualidade do açúcar'],['gestao','Gestão e Custos','Orçado × realizado, paradas e indicadores do mês'],['pessoas','Pessoas e Segurança','Equipe, escala, absenteísmo e segurança'],['Planejamento'],['esse','Simulador "E se"','Teste mudanças no terminal antes de investir','NOVO']];
+let cur='sala';
+$('#nav').innerHTML=SECS.map(s=>s.length===1?`<div class="grp">${s[0]}</div>`:`<button data-s="${s[0]}" class="${s[0]===cur?'on':''}"><svg viewBox="0 0 24 24">${IC[s[0]]}</svg>${s[1]}${s[3]?`<span class="tag">${s[3]}</span>`:''}</button>`).join('');
+function show(k){cur=k;$$('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.s===k));$$('.sec').forEach(s=>s.classList.toggle('on',s.id==='s-'+k));const s=SECS.find(x=>x[0]===k);set('ttl',s[1]);set('sub',s[2]);set('tvsec',s[1]);if(k==='sala'){if(!V.r)init3D();setTimeout(size3D,30)}if(k==='rec')renderRec();if(k==='esse')esCalc();window.scrollTo({top:0})}
+$('#nav').addEventListener('click',e=>{const b=e.target.closest('button');if(b)show(b.dataset.s)});
+set('sub',SECS[1][2]);
+
+/* ===================== tiles ===================== */
+const TI={emb:'<path d="M3 17h18M5 17V9h14v8M8 9V5h8v4"/>',est:'<path d="M3 21V9l9-6 9 6v12"/>',cam:'<path d="M1 5h13v11H1zM14 9h4l4 4v3h-8z"/>',cic:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',trem:'<rect x="5" y="3" width="14" height="13" rx="3"/><path d="M5 10h14"/>',cus:'<path d="M12 2v20M17 6H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>',fila:'<path d="M3 6h18M3 12h18M3 18h12"/>',tx:'<path d="M3 17l6-6 4 4 8-8"/>'};
+function tile(id,l,unit,sp,c,ic,dr,cls='c2',sub=''){return`<div class="card tile click ${cls}" data-act="drill:${dr}"><span class="more">detalhar ›</span><div class="hd"><div class="ic" style="background:${c}22;color:${c}"><svg viewBox="0 0 24 24">${TI[ic]}</svg></div><div class="l">${l}</div></div><div class="v"><span id="${id}">—</span><small>${unit}</small></div><div class="s" id="${id}s">${sub}</div>${spark(sp,c)}</div>`}
+const sv=n=>Array.from({length:16},(_,i)=>n*(.85+.25*Math.sin(i*.9+n)+R()*.12));
+$('#kpiInd').innerHTML=tile('kEmb','Embarcado hoje','t',hist.real.slice(-16),'#2e9e5b','emb','emb')+tile('kEst','Estoque armazém','t',hist.stock.slice(-16),'#2f6fb3','est','est')+tile('kCam','Caminhões descarregados','',sv(300),'#d9a000','cam','fila')+tile('kCic','Ciclo médio caminhão','min',sv(40),'#e07b22','cic','cic')+tile('kTrem','Trem na torre','%',sv(60),'#6b5bd6','trem','trem')+tile('kCus','Custo por tonelada','R$/t',CT.concat([10.7,10.62,10.62,10.6]),'#d64545','cus','cus','c2','<span class="dn">▲ 2,1%</span> vs orçado 10,40');
+$('#kpiRec').innerHTML=tile('rFila','Na fila','cam',sv(4),'#e07b22','fila','fila','c3')+tile('rEsp','Espera média','min',sv(12),'#d64545','cic','cic','c3')+tile('rTx','Descargas por hora','cam/h',sv(11),'#2f6fb3','tx','fila','c3')+tile('rRecv','Recebido hoje','t',sv(9000),'#2e9e5b','emb','emb','c3');
+set('kCus','10,62');
+
+/* ===================== charts ===================== */
+const CH={};
+function mk(id,cfg){if(CH[id])CH[id].destroy();CH[id]=new Chart(document.getElementById(id),cfg)}
+function O(unit,extra={},click){const line=css('--line');const o=Object.assign({responsive:true,maintainAspectRatio:false,animation:{duration:450},interaction:{mode:'index',intersect:false},
+ plugins:{legend:{position:'bottom',labels:{boxWidth:9,boxHeight:9,usePointStyle:true,padding:14}},tooltip:{backgroundColor:'#1c2025',titleColor:'#fff',bodyColor:'#e9eaec',padding:11,cornerRadius:8,boxPadding:4,callbacks:{label:c=>` ${c.dataset.label}: ${c.formattedValue} ${unit}`}}},
+ scales:{x:{grid:{display:false},ticks:{maxRotation:0,autoSkipPadding:10}},y:{grid:{color:line},border:{display:false},beginAtZero:true}}},extra);
+ if(click){o.onClick=(e,els)=>{if(els.length)click(els[0].index)};o.onHover=(e,els)=>{e.native.target.style.cursor=els.length?'pointer':'default'}}return o}
+function buildCharts(){
+ const Y=css('--y'),G=css('--g'),Rr=css('--r'),B=css('--b'),O2=css('--o'),mut=css('--muted'),line=css('--line'),ink=css('--ink');
+ Chart.defaults.color=mut;Chart.defaults.font.family='Inter, system-ui, sans-serif';Chart.defaults.font.size=11.5;Chart.defaults.borderColor=line;Chart.defaults.locale='pt-BR';
+ mk('chEmb',{type:'bar',data:{labels:[...hist.lab,'Hoje'],datasets:[{type:'line',label:'Programado',data:[...hist.prog,META_DIA],borderColor:ink,borderDash:[5,4],borderWidth:1.6,pointRadius:0,tension:.2},{label:'Realizado',data:[...hist.real,Math.round(S.shipped)],backgroundColor:[...hist.real.map((r,i)=>r>=hist.prog[i]*.95?G:Y),O2],borderRadius:5,maxBarThickness:20}]},options:O('t',{},i=>drill(i===30?'emb':'day:'+i))});
+ mk('chHora',{type:'bar',data:{labels:Array.from({length:24},(_,i)=>String(i).padStart(2,'0')+'h'),datasets:[{label:'Recebido',data:S.hourRecv.map(Math.round),backgroundColor:Y,borderRadius:3},{label:'Embarcado',data:S.hourShip.map(Math.round),backgroundColor:G,borderRadius:3}]},options:O('t',{},i=>drill('hora:'+i))});
+ mk('chTransp',{type:'bar',data:{labels:TRANSP,datasets:[{label:'Ciclo médio',data:transpAvg(),backgroundColor:c=>c.raw>45?Rr:B,borderRadius:5}]},options:O('min',{indexAxis:'y',scales:{x:{grid:{color:line},beginAtZero:true},y:{grid:{display:false}}},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${fmt(c.raw,1)} min`}}}},i=>drill('transp:'+i))});
+ const last=trainHist.slice(-12);
+ mk('chEst',{type:'bar',data:{labels:last.map(t=>t.id),datasets:[{type:'line',label:'Meta',data:last.map(()=>24),borderColor:Rr,borderDash:[5,4],pointRadius:0,borderWidth:1.6},{label:'Estadia',data:last.map(t=>+t.est.toFixed(1)),backgroundColor:last.map(t=>t.est>24?Rr:G),borderRadius:5,maxBarThickness:28}]},options:O('h',{},i=>drill('thist:'+trainHist.slice(-12)[i].id))});
+ mk('chGauge',{type:'doughnut',data:{labels:['Ocupado','Livre'],datasets:[{data:[S.stock,S.cap-S.stock],backgroundColor:[B,line],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,rotation:-90,circumference:180,cutout:'74%',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.label}: ${fmt(c.raw)} t`}}}}});
+ mk('chStock',{type:'line',data:{labels:[...hist.lab,'Hoje'],datasets:[{label:'Estoque',data:[...hist.stock,Math.round(S.stock)],borderColor:B,backgroundColor:B+'22',fill:true,tension:.3,pointRadius:0,pointHoverRadius:6},{label:'Capacidade',data:[...hist.lab,0].map(()=>60000),borderColor:Rr,borderDash:[5,4],pointRadius:0,borderWidth:1.4}]},options:O('t')});
+ mk('chOrc',{type:'bar',data:{labels:COST_CC,datasets:[{label:'Orçado',data:ORC,backgroundColor:mut+'55',borderRadius:5},{label:'Realizado',data:REAL,backgroundColor:REAL.map((r,i)=>r>ORC[i]?Rr:G),borderRadius:5}]},options:O('mil',{scales:{x:{grid:{display:false},ticks:{autoSkip:false,maxRotation:30,minRotation:0}},y:{grid:{color:line},beginAtZero:true}}},i=>drill('cc:'+i))});
+ buildPar();
+ mk('chCt',{type:'line',data:{labels:MES,datasets:[{label:'Realizado',data:CT,borderColor:Rr,backgroundColor:Rr,tension:.3,pointRadius:3},{label:'Orçado',data:MES.map(()=>10.4),borderColor:mut,borderDash:[5,4],pointRadius:0}]},options:O('R$/t',{scales:{x:{grid:{display:false}},y:{grid:{color:line},min:9.5}}})});
+ mk('chAbs',{type:'line',data:{labels:MES,datasets:[{label:'Absenteísmo',data:ABS,borderColor:B,backgroundColor:B+'22',fill:true,tension:.3,pointRadius:4,pointBackgroundColor:ABS.map(a=>a>3?Rr:B)},{label:'Meta',data:MES.map(()=>3),borderColor:Rr,borderDash:[5,4],pointRadius:0}]},options:O('%',{scales:{x:{grid:{display:false}},y:{grid:{color:line},min:0,max:5}}})});
+ esCharts();
+}
+function buildPar(){const Y=css('--y'),Rr=css('--r'),line=css('--line');const P=[...PAR].sort((a,b)=>b[1]-a[1]);const tot=P.reduce((a,b)=>a+b[1],0);let acc=0;
+ mk('chPar',{type:'bar',data:{labels:P.map(p=>p[0]),datasets:[{type:'line',label:'% acumulado',data:P.map(p=>+((acc+=p[1])/tot*100).toFixed(1)),borderColor:Rr,pointBackgroundColor:Rr,yAxisID:'y1',tension:.2},{label:'Horas paradas',data:P.map(p=>+p[1].toFixed(1)),backgroundColor:Y,borderRadius:5}]},
+  options:O('',{animation:false,scales:{x:{grid:{display:false},ticks:{maxRotation:40,minRotation:30}},y:{grid:{color:line},beginAtZero:true},y1:{position:'right',min:0,max:100,grid:{display:false},ticks:{callback:v=>v+'%'}}},plugins:{legend:{position:'bottom',labels:{boxWidth:9,usePointStyle:true}},tooltip:{callbacks:{label:c=>c.dataset.yAxisID==='y1'?` Acumulado: ${fmt(c.raw,1)}%`:` ${fmt(c.raw,1)} h`}}}},i=>drill('par:'+[...PAR].sort((a,b)=>b[1]-a[1])[i][0]))})}
+function transpAvg(){return TRANSP.map(t=>{const r=S.records.filter(x=>x.transp===t).slice(0,20);return r.length?+(r.reduce((a,b)=>a+b.ciclo,0)/r.length).toFixed(1):40})}
+
+/* ===================== tabelas ===================== */
+$('#fTransp').innerHTML+=TRANSP.map(t=>`<option>${t}</option>`).join('');
+$('#tQual').innerHTML=QUAL.map((q,i)=>`<tr data-act="drill:lote:${i}"><td class="mono"><b>${q.id}</b></td><td>${q.org}</td><td class="num">${fmt(q.vol)}</td><td class="num ${q.pol<99.3?'dn':''}">${fmt(q.pol,2)}</td><td class="num ${q.um>.15?'dn':''}">${fmt(q.um,2)}</td><td class="num ${q.cor>1200?'dn':''}">${fmt(q.cor)}</td><td class="num">${fmt(q.cz,2)}</td><td>${q.ok?chip('Conforme','g'):chip('Segregar / reanálise','r')}</td></tr>`).join('');
+const IND=[['Toneladas embarcadas (mês)','118.000 t','103.450 t','o'],['Aderência à programação ferroviária','95%','91%','o'],['Estadia média do trem','24,0 h','22,8 h','g'],['Ciclo médio do caminhão','45 min','39 min','g'],['Custo por tonelada','R$ 10,40','R$ 10,62','r'],['Perdas / quebra de carga','0,10%','0,08%','g'],['Disponibilidade da correia','97%','95,8%','o']];
+$('#tInd').innerHTML=IND.map((r,i)=>`<tr data-act="drill:ind:${i}"><td>${r[0]}</td><td class="num">${r[1]}</td><td class="num"><b>${r[2]}</b></td><td>${chip(r[3]==='g'?'Dentro da meta':r[3]==='o'?'Atenção':'Fora da meta',r[3])}</td></tr>`).join('');
+const EQ=(function(){const F=['Líder de turno','Operador de carregamento','Operador de pá carregadeira','Balanceiro','Auxiliar de pátio'];const N=['Carlos A.','Rogério M.','Valdir S.','Juliano P.','Edson R.','Marcos V.','Anderson L.','Fábio C.','Renato G.','Wesley T.','Gilmar F.','Diego H.','Leandro B.','Sérgio N.','Paulo D.','Aline M.','Rafael O.'];const H={A:'06:00–14:20',B:'14:20–22:40',C:'22:40–06:00',ADM:'07:00–17:00'};const out=[];let k=0;['A','B','C'].forEach(t=>F.forEach(f=>out.push({n:N[k++],f,t,h:H[t]})));out.push({n:N[k++],f:'Analista de logística',t:'ADM',h:H.ADM});out.push({n:N[k++],f:'Técnico de segurança',t:'ADM',h:H.ADM});out.forEach(o=>{const r=R();o.st=r<.78?['Presente','g']:r<.88?['Folga','k']:r<.95?['Férias','b']:['Atestado','o'];o.nr=R()<.82;o.he=ri(0,14)});return out})();
+function renderEq(){const f=$('#fTurno').value;$('#tEq').innerHTML=EQ.map((e,i)=>[e,i]).filter(([e])=>!f||e.t===f).map(([e,i])=>`<tr data-act="drill:col:${i}"><td><b>${e.n}</b></td><td>${e.f}</td><td><b>${e.t}</b></td><td class="mono">${e.h}</td><td>${e.nr?chip('NR-11 / NR-35 em dia','g'):chip('NR-11 vence em 20 dias','o')}</td><td>${chip(e.st[0],e.st[1])}</td></tr>`).join('');set('eqN',`${EQ.filter(e=>e.st[0]==='Presente').length} de ${EQ.length} presentes`)}
+$('#fTurno').onchange=renderEq;renderEq();
+
+/* ===================== render dinâmico ===================== */
+const TC={truck:'#f2b705',scale:'#2f6fb3',train:'#6b5bd6',ok:'#2e9e5b',alert:'#d64545',info:'#8d939b'};
+function renderFeed(){const h=S.log.slice(0,16).map(e=>`<li><time>${hhmm(e.t)}</time><i style="background:${TC[e.type]}"></i><span>${e.msg}</span></li>`);$('#feed').innerHTML=h.join('');$('#feedH').innerHTML=h.slice(0,5).join('')}
+function allTrucks(){return[...S.queue,...(S.bal?[S.bal.tk]:[]),...S.moega.filter(Boolean).map(m=>m.tk),...S.records,...S.exiting]}
+function renderRec(){const q=$('#fBusca').value.trim().toUpperCase(),ft=$('#fTransp').value,fs=$('#fStatus').value;
+ const rows=[...(S.bal?[[S.bal.tk,'Na balança']]:[]),...S.queue.map(t=>[t,'Na fila']),...S.moega.filter(Boolean).map(m=>[m.tk,'Descarregando']),...S.records.map(t=>[t,'Concluído'])].filter(([t,s])=>(!q||t.placa.includes(q)||t.transp.toUpperCase().includes(q))&&(!ft||t.transp===ft)&&(!fs||s===fs));
+ const cc={'Na fila':'o','Na balança':'o','Descarregando':'b','Concluído':'g'};
+ $('#tRec').innerHTML=rows.slice(0,60).map(([t,s])=>`<tr data-act="drill:truck:${t.id}"><td class="mono"><b>${t.placa}</b></td><td>${t.transp}</td><td>${t.tipo}</td><td class="num">${fmt(t.liq,1)}</td><td class="mono">${hhmm(t.ent)}</td><td class="mono">${t.sai?hhmm(t.sai):'—'}</td><td class="num ${t.ciclo>45?'dn':''}">${t.ciclo?fmt(t.ciclo):'—'}</td><td>${chip(s,cc[s])}</td></tr>`).join('');set('tRecN',rows.length+' registros · clique numa linha')}
+['#fBusca','#fTransp','#fStatus'].forEach(s=>$(s).addEventListener('input',renderRec));
+function renderTrem(){$('#tTrem').innerHTML=trainHist.slice(-12).reverse().map(t=>`<tr data-act="drill:thist:${t.id}"><td class="mono"><b>${t.id}</b></td><td class="mono">${t.lab}</td><td class="num">${fmt(t.t)}</td><td class="num ${t.est>24?'dn':''}">${fmt(t.est,1)} h</td><td>${t.est>24?chip('Acima da meta','r'):chip('No prazo','g')}</td></tr>`).join('')}
+$('#wgrid').innerHTML=Array.from({length:NV},(_,i)=>`<div class="wc" id="w${i}" data-act="drill:wag:${i}"></div>`).join('');
+function updTrain(){const T=S.train,Y=css('--y'),G=css('--g'),L=css('--line');
+ if(!T){$('#trainCard').innerHTML=`<div class="tid">—</div><p style="color:var(--muted)">Nenhuma composição na torre.${S.fail.vagao?' <b class="dn">Falta de vagão na ferrovia.</b>':''}</p><div class="kv"><div><span>Próximo trem</span><b>${S.fail.vagao?'indefinido':hhmm(S.t+Math.max(0,S.nextTrain))}</b></div><div><span>Estoque disponível</span><b>${fmt(S.stock)} t</b></div></div><div class="acts"><button class="ab" data-act="trem">Chamar próximo trem</button></div>`;for(let i=0;i<NV;i++){const c=document.getElementById('w'+i);c.style.background=L;c.className='wc'}set('kTrem','—');set('kTrems','aguardando composição');set('hTrem','—');return}
+ const ld=loaded(T),pct=ld/(NV*CAPV)*100,remT=NV*CAPV-ld,est=(S.abs-T.cheg)/3600,s=trainStatus(T),prev=T.status==='carregando'&&!T.block?hhmm(S.t+remT/S.ctrl.rate*3600):T.status==='manobra'?'após manobra':T.block?'indefinida':'concluído';
+ $('#trainCard').innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div class="tid">${T.id}</div>${chip(s[0],s[1])}</div><div style="color:var(--muted);font-size:12.5px">2 locomotivas · 80 vagões HFT · destino: porto</div><div class="pbar"><div style="width:${pct.toFixed(1)}%"></div></div><div style="display:flex;justify-content:space-between;font-size:12.5px"><span><b class="mono">${fmt(ld)}</b> de ${fmt(NV*CAPV)} t</span><b class="mono">${fmt(pct,1)}%</b></div>
+ <div class="kv"><div><span>Vagões carregados</span><b>${Math.min(T.idx,NV)}/80</b></div><div><span>Taxa da torre</span><b>${fmt(loadingNow()?S.ctrl.rate:0)} t/h</b></div><div><span>Estadia atual</span><b class="${est>24?'dn':''}">${fmt(est,1)} h</b></div><div><span>Previsão de fechamento</span><b>${prev}</b></div></div>
+ <div class="acts"><button class="ab ${S.ctrl.tower?'r':''}" data-act="torre">${S.ctrl.tower?'Parar torre':'Religar torre'}</button><button class="ab k" data-act="drill:trem">Detalhar composição</button></div>`;
+ for(let i=0;i<NV;i++){const c=document.getElementById('w'+i),f=T.wagons[i]/CAPV;c.className='wc'+(i===T.idx&&T.status==='carregando'?' cur':'');c.style.background=f>=1?G:f>0?`linear-gradient(to top,${Y} ${f*100}%,${L} ${f*100}%)`:L;c.title=`Vagão ${String(i+1).padStart(2,'0')} · ${fmt(T.wagons[i],1)} t`}
+ set('kTrem',fmt(pct,0));set('kTrems',`${T.id} · ${s[0].toLowerCase()}`);set('hTrem',`${Math.min(T.idx,NV)}<small>/80</small>`)}
+function alertsList(){const a=[],T=S.train,occ=S.stock/S.cap;
+ for(const k in S.fail)if(S.fail[k]>0)a.push(['r',`${FAILS[k].n} — ${FAILS[k].s} (${Math.ceil(S.fail[k]/60)} min)`,FAILS[k].tag]);
+ if(!S.ctrl.moega[0]||!S.ctrl.moega[1])a.push(['o',`Moega ${!S.ctrl.moega[0]?1:2} bloqueada pelo operador`,'MOE']);
+ if(!S.ctrl.tower)a.push(['r','Torre parada manualmente','TOR-01']);
+ if(occ>.85)a.push(['r',`Armazém com ${fmt(occ*100)}% de ocupação — priorizar carregamento`,'ARM-01']);
+ if(S.queue.length>=6)a.push(['r',`Fila com ${S.queue.length} caminhões — reforçar descarga`,'FILA']);else if(S.queue.length>=4)a.push(['o',`Fila crescendo: ${S.queue.length} caminhões aguardando`,'FILA']);
+ if(T&&T.status==='carregando'){const p=(S.abs-T.cheg)/3600+(NV*CAPV-loaded(T))/S.ctrl.rate+.5;if(p>24)a.push(['o',`${T.id}: estadia projetada de ${fmt(p,1)} h (meta 24 h)`,'TREM'])}
+ if(!T&&!S.fail.vagao)a.push(['b',`Sem trem na torre — próxima composição às ${hhmm(S.t+Math.max(0,S.nextTrain))}`,'TREM']);
+ const ef=S.shipped/(META_DIA*Math.max(.05,S.t/86400));if(ef<.9)a.push(['o',`Embarque ${fmt((1-ef)*100)}% abaixo do ritmo da meta diária`,'META']);
+ a.push(['g',`${S.semAc} dias sem acidente com afastamento`,'SEG']);return a}
+const COL={r:'#d64545',o:'#e07b22',b:'#2f6fb3',g:'#2e9e5b'};
+function updAlerts(){const a=alertsList();$('#alerts').innerHTML=a.slice(0,7).map(x=>`<li><i style="background:${COL[x[0]]}"></i><span>${x[1]}</span></li>`).join('');
+ if(cur==='sin')$('#tAlm').innerHTML=a.map(x=>`<tr><td class="mono">${hhmm(S.t)}</td><td class="mono">${x[2]}</td><td>${x[1]}</td><td>${chip({r:'Alta',o:'Média',b:'Info',g:'Normal'}[x[0]],x[0]==='b'?'b':x[0])}</td></tr>`).join('')}
+function updFlow(){const T=S.train,occ=S.stock/S.cap,busy=S.moega.filter(Boolean).length;
+ const st=[['Portaria',S.trucks+S.queue.length+busy+(S.bal?1:0),'entradas hoje','fila',S.fail.pico>0],['Fila / balança',S.queue.length,S.fail.balanca?'balança em falha':'aguardando','fila',S.fail.balanca>0||S.queue.length>=6],['Moegas',busy+'/'+S.ctrl.moega.filter(Boolean).length,'em descarga','cic',!S.ctrl.moega[0]||!S.ctrl.moega[1]],['Armazém',fmt(S.stock)+' t',fmt(occ*100)+'% ocupado','est',occ>.85],['Torre',loadingNow()?fmt(S.ctrl.rate)+' t/h':'parada',T&&T.block?T.block:'TC-01/02','trem',!!(T&&T.block)],['Trem',T?Math.min(T.idx,NV)+'/80':'—',T?T.id:'aguardando','trem',S.fail.vagao>0]];
+ $('#flow').innerHTML=st.map((s,i)=>`${i?'<div class="fa">›</div>':''}<div class="fs ${s[4]?'bad':''}" data-act="drill:${s[3]}"><div class="l">${s[0]}</div><div class="v">${s[1]}</div><div class="s">${s[2]}</div></div>`).join('')}
+function updHero(){const p=S.shipped/META_DIA,off=352*(1-Math.min(1,p));$('#ringC').setAttribute('stroke-dashoffset',off.toFixed(1));$('#ringC').setAttribute('stroke',p>=S.t/86400*.95?'#3ddc84':'#f2b705');set('ringV',fmt(p*100)+'%');
+ const h=S.t/3600,turno=h>=6&&h<14.33?'A':h>=14.33&&h<22.66?'B':'C';set('heroT',`Turno ${turno} · ${DIAS[new Date(BASE.getTime()+S.day*864e5).getDay()]} ${hhmm(S.t)}`);
+ const nf=Object.values(S.fail).filter(x=>x>0).length;set('heroH',nf?`⚠ ${nf} ocorrência${nf>1?'s':''} ativa${nf>1?'s':''} no terminal`:'Operação normal — terminal rodando');
+ set('hsE',fmt(S.shipped)+' t');set('hsR',fmt(S.recv)+' t');set('hsT',loadingNow()?fmt(S.ctrl.rate)+' t/h':'parado');
+ const eq=[['Moega 1',S.moega[0]?'o':S.ctrl.moega[0]?'g':'r','m0'],['Moega 2',S.moega[1]?'o':S.ctrl.moega[1]?'g':'r','m1'],['Balança',S.fail.balanca?'r':'g','bal'],['Correia TC-02',S.fail.correia?'r':loadingNow()?'o':'g','tc'],['Torre',!S.ctrl.tower||S.fail.correia?'r':loadingNow()?'o':'g','tor'],['Ferrovia',S.fail.vagao?'r':'g','trem']];
+ $('#eqs').innerHTML=eq.map(e=>`<div class="eq" data-act="drill:eq:${e[2]}"><i style="background:${COL[e[1]]}"></i>${e[0]}</div>`).join('')}
+
+/* ===================== sinóptico (SVG) ===================== */
+function buildSVG(){const tg=(id,x,y,w=92)=>`<g class="tg"><rect x="${x}" y="${y}" width="${w}" height="22" rx="4"/><text id="${id}" x="${x+8}" y="${y+15}">—</text></g>`;
+ const lamp=(id,x,y)=>`<circle id="${id}" cx="${x}" cy="${y}" r="7" fill="#3ddc84" stroke="#0c0e11" stroke-width="2"/>`;
+ let fila='';for(let i=0;i<8;i++)fila+=`<rect id="fq${i}" x="${300-i*30}" y="372" width="24" height="14" rx="2" fill="#2a2f36"/>`;
+ $('#svgw').innerHTML=`<svg viewBox="0 0 1000 520"><defs><pattern id="gp" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0H0V20" fill="none" stroke="#1d2126" stroke-width="1"/></pattern></defs><rect width="1000" height="520" fill="url(#gp)"/>
+ <path class="flowp" id="pRoad" d="M30 395H420"/>
+ <path class="flowp" id="pM0" d="M420 395Q440 395 460 330"/><path class="flowp" id="pM1" d="M420 395Q440 395 460 440"/>
+ <path class="flowp" id="pTR" d="M545 330H570V380H600M545 440H570V380"/>
+ <path class="flowp" id="pTC" d="M760 290L790 290L832 170"/>
+ <path class="flowp" id="pCH" d="M860 175V308"/>
+ <g class="eqg" data-act="drill:eq:port"><rect class="hl" x="30" y="350" width="56" height="38" rx="4" fill="#232830" stroke="#3a4048"/><rect x="88" y="364" width="6" height="24" fill="#f2b705"/><text class="lbl" x="30" y="340">PORTARIA</text></g>
+ <g class="eqg" data-act="drill:fila"><rect class="hl" x="100" y="362" width="230" height="34" rx="6" fill="none" stroke="#2a2f36" stroke-dasharray="4 4"/>${fila}<text class="lbl" x="110" y="350">FILA</text>${tg('tFila',230,330,90)}</g>
+ <g class="eqg" data-act="drill:eq:bal"><rect class="hl" x="345" y="386" width="70" height="12" rx="2" fill="#5b616a" stroke="#f2b705"/><rect x="360" y="410" width="40" height="26" rx="3" fill="#232830" stroke="#3a4048"/>${lamp('lBal',408,374)}<text class="lbl" x="345" y="460">BALANÇA BAL-01</text>${tg('tBal',345,468,100)}</g>
+ <g class="eqg" data-act="drill:eq:m0"><polygon class="hl" points="465,290 545,290 525,345 485,345" fill="#232830" stroke="#3a4048" stroke-width="2"/><rect x="470" y="352" width="70" height="7" rx="3" fill="#2a2f36"/><rect id="pbM0" x="470" y="352" width="0" height="7" rx="3" fill="#e07b22"/>${lamp('lM0',555,292)}<text class="lbl" x="465" y="280">MOEGA 1</text>${tg('tM0',465,240,96)}</g>
+ <g class="eqg" data-act="drill:eq:m1"><polygon class="hl" points="465,410 545,410 525,465 485,465" fill="#232830" stroke="#3a4048" stroke-width="2"/><rect x="470" y="472" width="70" height="7" rx="3" fill="#2a2f36"/><rect id="pbM1" x="470" y="472" width="0" height="7" rx="3" fill="#e07b22"/>${lamp('lM1',555,412)}<text class="lbl" x="465" y="500">MOEGA 2</text>${tg('tM1',560,470,96)}</g>
+ 
+ <g class="eqg" data-act="drill:est"><path class="hl" d="M600 250L680 205L760 250V470H600Z" fill="#1d2228" stroke="#4a5059" stroke-width="2"/><clipPath id="ac"><path d="M603 252L680 209L757 252V467H603Z"/></clipPath><rect id="armLvl" x="600" y="470" width="160" height="0" fill="#f4efe0" opacity=".85" clip-path="url(#ac)"/><text class="lbl" x="612" y="200">ARMAZÉM · 60.000 t</text><text id="armT" x="680" y="365" text-anchor="middle" font-family="JetBrains Mono, monospace" font-weight="800" font-size="20" fill="#1c2025">—</text><text id="armP" x="680" y="388" text-anchor="middle" font-family="JetBrains Mono, monospace" font-weight="700" font-size="13" fill="#555">—</text></g>
+ <g class="eqg" data-act="drill:eq:tc">${lamp('lTC',790,290)}</g>
+ <g class="eqg" data-act="drill:eq:tor"><line x1="840" y1="175" x2="840" y2="326" stroke="#4a5059" stroke-width="4"/><line x1="880" y1="175" x2="880" y2="326" stroke="#4a5059" stroke-width="4"/><rect class="hl" x="830" y="120" width="60" height="55" rx="4" fill="#232830" stroke="#f2b705" stroke-width="2"/>${lamp('lTor',900,122)}<text class="lbl" x="822" y="108">TORRE TOR-01</text>${tg('tTor',900,140,92)}</g>
+ <line x1="790" y1="332" x2="1000" y2="332" stroke="#5b616a" stroke-width="3"/><line x1="790" y1="338" x2="1000" y2="338" stroke="#3a4048" stroke-width="2" stroke-dasharray="3 5"/>
+ <g class="eqg" data-act="drill:trem" id="gTrain">${Array.from({length:10},(_,i)=>`<rect id="tw${i}" x="${957-i*19}" y="312" width="16" height="18" rx="2" fill="#3a4048"/>`).join('')}<rect x="975" y="308" width="22" height="22" rx="3" fill="#f2b705"/><text class="lbl" x="870" y="392">LINHA DE CARGA</text>${tg('tTrain',870,350,124)}</g>
+ <text x="20" y="30" font-family="JetBrains Mono, monospace" font-weight="800" font-size="13" fill="#f2b705">BITOLA · SINÓPTICO</text><text id="sinStat" x="20" y="50" font-family="JetBrains Mono, monospace" font-size="11" fill="#8d939b">—</text>
+ </svg>`}
+function updSin(){if(cur!=='sin')return;const T=S.train,ld=loadingNow(),c=(id,cl)=>{const e=document.getElementById(id);if(e)e.setAttribute('class','flowp '+cl)},l=(id,col)=>document.getElementById(id).setAttribute('fill',col);
+ c('pRoad',S.queue.length?'on':'');c('pM0',S.moega[0]?'on':S.ctrl.moega[0]?'':'bad');c('pM1',S.moega[1]?'on':S.ctrl.moega[1]?'':'bad');c('pTR',S.moega[0]||S.moega[1]?'on':'');c('pTC',S.fail.correia?'bad':ld?'on':'');c('pCH',ld?'on':'');
+ for(let i=0;i<8;i++)l('fq'+i,i<S.queue.length?(i===0?'#f2b705':'#c9b98f'):'#2a2f36');
+ set('tFila',`${S.queue.length} CAM`);l('lBal',S.fail.balanca?'#ff4d4d':S.bal?'#f2b705':'#3ddc84');set('tBal',S.fail.balanca?'FALHA':S.bal?S.bal.tk.placa:'LIVRE');
+ [0,1].forEach(i=>{const m=S.moega[i];l('lM'+i,!S.ctrl.moega[i]?'#ff4d4d':m?'#e07b22':'#3ddc84');set('tM'+i,!S.ctrl.moega[i]?'BLOQ.':m?m.tk.placa:'LIVRE');document.getElementById('pbM'+i).setAttribute('width',m?Math.max(0,70*(1-Math.max(0,m.rem)/(m.tot||450))).toFixed(1):0)});
+ const occ=S.stock/S.cap,hh=262*occ;const al=document.getElementById('armLvl');al.setAttribute('y',(470-hh).toFixed(1));al.setAttribute('height',hh.toFixed(1));set('armT',fmt(S.stock)+' t');set('armP',fmt(occ*100,1)+'%');document.getElementById('armT').setAttribute('fill',occ>.45?'#1c2025':'#e9eaec');document.getElementById('armP').setAttribute('fill',occ>.38?'#555':'#9aa0a8');
+ l('lTC',S.fail.correia?'#ff4d4d':ld?'#e07b22':'#3ddc84');l('lTor',!S.ctrl.tower||S.fail.correia||S.fail.chuva?'#ff4d4d':ld?'#e07b22':'#3ddc84');set('tTor',ld?fmt(S.ctrl.rate)+' t/h':T&&T.block?'PARADA':'0 t/h');
+ document.getElementById('gTrain').style.opacity=T?1:.25;for(let i=0;i<10;i++){let s=0;if(T)for(let j=i*8;j<i*8+8;j++)s+=T.wagons[j];const f=s/(8*CAPV);l('tw'+i,f>=1?'#3ddc84':f>0?'#f2b705':'#3a4048')}
+ set('tTrain',T?`${T.id} ${Math.min(T.idx,NV)}/80`:S.fail.vagao?'SEM VAGÃO':'SEM TREM');
+ set('sinStat',`ESTOQUE ${fmt(S.stock)} t · EMBARCADO HOJE ${fmt(S.shipped)} t · RECEBIDO ${fmt(S.recv)} t`);set('sinClock',hhmm(S.t))}
+
+/* ===================== drill-down (modal) ===================== */
+function openModal(t,html,cfg){set('mT',t);$('#mB').innerHTML=html;$('#modal').classList.add('on');if(cfg&&window.Chart)setTimeout(()=>mk('mch',cfg),20)}
+function closeModal(){$('#modal').classList.remove('on');if(CH.mch){CH.mch.destroy();delete CH.mch}}
+$('#modal').addEventListener('click',e=>{if(e.target.id==='modal'||e.target.dataset.close!==undefined)closeModal()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){if($('#modal').classList.contains('on'))closeModal();else if(tv)tvOff()}});
+const mg=a=>`<div class="mgrid">${a.map(x=>`<div><span>${x[0]}</span><b>${x[1]}</b></div>`).join('')}</div>`;
+const chBox='<div class="ch s"><canvas id="mch"></canvas></div>';
+function drill(k){const [t,a]=[k.split(':')[0],k.split(':').slice(1).join(':')];const Y=css('--y'),G=css('--g'),B=css('--b'),Rr=css('--r'),O2=css('--o'),line=css('--line');const hrs=Array.from({length:24},(_,i)=>String(i).padStart(2,'0')+'h');
+ if(t==='emb'){const tr=trainHist.filter(x=>x.lab.startsWith(String(9+S.day).padStart(2,'0')));openModal('Embarque de hoje',mg([['Embarcado',fmt(S.shipped)+' t'],['Meta do dia',fmt(META_DIA)+' t'],['Atingido',fmt(S.shipped/META_DIA*100)+'%'],['Trens formados',tr.length+(S.train&&S.train.status!=='manobra'?' + 1 em carga':'')]])+chBox+`<h4 style="margin:18px 0 8px">Composições do dia</h4><table><tbody>${tr.map(x=>`<tr data-act="drill:thist:${x.id}"><td class="mono"><b>${x.id}</b></td><td>${x.lab}</td><td class="num">${fmt(x.t)} t</td></tr>`).join('')||'<tr><td style="color:var(--muted)">Nenhuma composição concluída hoje ainda.</td></tr>'}${S.train?`<tr data-act="drill:trem"><td class="mono"><b>${S.train.id}</b></td><td>${trainStatus(S.train)[0]}</td><td class="num">${fmt(loaded(S.train))} t</td></tr>`:''}</tbody></table>`,{type:'bar',data:{labels:hrs,datasets:[{label:'Embarcado',data:S.hourShip.map(Math.round),backgroundColor:G,borderRadius:3}]},options:O('t')})}
+ else if(t==='est'){openModal('Armazém — estoque e lotes',mg([['Estoque',fmt(S.stock)+' t'],['Ocupação',fmt(S.stock/S.cap*100,1)+'%'],['Cobertura',fmt(S.stock/(NV*CAPV),1)+' trens'],['Lotes não conformes',QUAL.filter(q=>!q.ok).length]])+chBox+`<h4 style="margin:18px 0 8px">Lotes armazenados</h4><table><tbody>${QUAL.map((q,i)=>`<tr data-act="drill:lote:${i}"><td class="mono"><b>${q.id}</b></td><td class="num">${fmt(q.vol)} t</td><td>${q.ok?chip('Conforme','g'):chip('Segregar','r')}</td></tr>`).join('')}</tbody></table>`,{type:'line',data:{labels:[...hist.lab,'Hoje'],datasets:[{label:'Estoque',data:[...hist.stock,Math.round(S.stock)],borderColor:B,backgroundColor:B+'22',fill:true,tension:.3,pointRadius:0}]},options:O('t')})}
+ else if(t==='fila'){const arr=Array(24).fill(0);S.records.forEach(r=>{if(r.ent>=0)arr[Math.floor(((r.ent%86400)+86400)%86400/3600)]++});openModal('Fila e chegada de caminhões',mg([['Na fila',S.queue.length],['Descarregando',S.moega.filter(Boolean).length],['Descarregados hoje',S.trucks],['Capacidade','~15 cam/h']])+`<table><thead><tr><th>Pos.</th><th>Placa</th><th>Transportadora</th><th class="num">Carga</th><th class="num">Esperando</th></tr></thead><tbody>${(S.bal?[S.bal.tk]:[]).concat(S.queue).map((q,i)=>`<tr data-act="drill:truck:${q.id}"><td>${S.bal&&i===0?'balança':(S.bal?i:i+1)+'º'}</td><td class="mono"><b>${q.placa}</b></td><td>${q.transp}</td><td class="num">${fmt(q.liq,1)} t</td><td class="num">${fmt((S.abs-q.ent)/60)} min</td></tr>`).join('')||'<tr><td colspan="5" style="color:var(--muted)">Fila vazia.</td></tr>'}</tbody></table><h4 style="margin:18px 0 8px">Caminhões concluídos por hora de chegada</h4>`+chBox,{type:'bar',data:{labels:hrs,datasets:[{label:'Caminhões',data:arr,backgroundColor:Y,borderRadius:3}]},options:O('cam')})}
+ else if(t==='cic'){const rs=S.records.slice(0,40).filter(r=>r.ini);const w=rs.reduce((s,r)=>s+(r.ini-r.ent),0)/Math.max(1,rs.length)/60,d=rs.reduce((s,r)=>s+(r.sai-r.ini),0)/Math.max(1,rs.length)/60;const bins=[0,0,0,0,0,0];S.records.slice(0,60).forEach(r=>bins[Math.min(5,Math.max(0,Math.floor((r.ciclo-20)/8)))]++);
+  openModal('Ciclo do caminhão no terminal',mg([['Ciclo médio',fmt(S.cycleN?S.cycleSum/S.cycleN:0)+' min'],['Espera fila + balança',fmt(w)+' min'],['Descarga na moega',fmt(d)+' min'],['Meta','45 min']])+`<p style="color:var(--muted);margin-top:0">Distribuição dos últimos 60 ciclos. Acima de 44 min, a principal causa é espera na fila.</p>`+chBox,{type:'bar',data:{labels:['<28','28–36','36–44','44–52','52–60','60+'],datasets:[{label:'Caminhões',data:bins,backgroundColor:[G,G,G,O2,Rr,Rr],borderRadius:5}]},options:O('cam')})}
+ else if(t==='trem'){const T=S.train;if(!T){openModal('Composição',`<p>Nenhuma composição na torre. Próxima prevista: <b>${S.fail.vagao?'indefinida (falta de vagão)':hhmm(S.t+Math.max(0,S.nextTrain))}</b>.</p><div class="acts"><button class="ab" data-act="trem">Chamar próximo trem</button></div>`);return}
+  openModal('Composição '+T.id,mg([['Status',trainStatus(T)[0]],['Carga',fmt(loaded(T))+' t'],['Vagões',Math.min(T.idx,NV)+'/80'],['Estadia',fmt((S.abs-T.cheg)/3600,1)+' h']])+`<div class="wgrid">${T.wagons.map((w,i)=>`<div class="wc" data-act="drill:wag:${i}" style="background:${w>=CAPV?G:w>0?Y:line}" title="Vagão ${i+1}"></div>`).join('')}</div><div class="acts" style="margin-top:14px"><button class="ab ${S.ctrl.tower?'r':''}" data-act="torre">${S.ctrl.tower?'Parar torre':'Religar torre'}</button></div>`)}
+ else if(t==='cus'){openModal('Custo por tonelada — composição',mg([['Realizado','R$ 10,62/t'],['Orçado','R$ 10,40/t'],['Variação','+2,1%'],['Total do mês','R$ '+fmt(REAL.reduce((a,b)=>a+b,0))+' mil']])+`<table><thead><tr><th>Centro de custo</th><th class="num">Orçado</th><th class="num">Realizado</th><th class="num">Var.</th></tr></thead><tbody>${COST_CC.map((c,i)=>`<tr data-act="drill:cc:${i}"><td>${c}</td><td class="num">${fmt(ORC[i])}</td><td class="num"><b>${fmt(REAL[i])}</b></td><td class="num ${REAL[i]>ORC[i]?'dn':'up'}">${REAL[i]>ORC[i]?'+':''}${fmt((REAL[i]/ORC[i]-1)*100,1)}%</td></tr>`).join('')}</tbody></table><br>`+chBox,{type:'doughnut',data:{labels:COST_CC,datasets:[{data:REAL,backgroundColor:[B,Y,Rr,G,O2,'#6b5bd6'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right'}}}})}
+ else if(t==='day'){const i=+a,r2=rng(i*91+7);const h=Array.from({length:24},()=>Math.round(hist.real[i]/24*(.4+r2()*1.2)));const par=[['Chuva',r2()*3],['Falta de vagão',r2()*4],['Correia',r2()*1.5]].filter(p=>p[1]>.6);
+  openModal('Embarque de '+hist.lab[i],mg([['Programado',fmt(hist.prog[i])+' t'],['Realizado',fmt(hist.real[i])+' t'],['Aderência',fmt(hist.real[i]/hist.prog[i]*100)+'%'],['Trens',Math.round(hist.real[i]/7600*10)/10]])+`<p style="margin-top:0"><b>Paradas do dia:</b> ${par.map(p=>`${p[0]} ${fmt(p[1],1)} h`).join(' · ')||'nenhuma relevante'}</p>`+chBox,{type:'bar',data:{labels:hrs,datasets:[{label:'Embarcado',data:h,backgroundColor:hist.real[i]>=hist.prog[i]*.95?G:Y,borderRadius:3}]},options:O('t')})}
+ else if(t==='hora'){const h=+a;const rs=S.records.filter(r=>Math.floor(((r.sai%86400)+86400)%86400/3600)===h);openModal(`Hora ${String(h).padStart(2,'0')}h`,mg([['Recebido',fmt(S.hourRecv[h])+' t'],['Embarcado',fmt(S.hourShip[h])+' t'],['Caminhões',rs.length],['Saldo armazém',(S.hourRecv[h]-S.hourShip[h]>=0?'+':'')+fmt(S.hourRecv[h]-S.hourShip[h])+' t']])+`<table><tbody>${rs.map(r=>`<tr data-act="drill:truck:${r.id}"><td class="mono"><b>${r.placa}</b></td><td>${r.transp}</td><td class="num">${fmt(r.liq,1)} t</td><td class="num">${fmt(r.ciclo)} min</td></tr>`).join('')||'<tr><td style="color:var(--muted)">Sem caminhões concluídos nesta hora.</td></tr>'}</tbody></table>`)}
+ else if(t==='transp'){const n=TRANSP[+a];const rs=S.records.filter(r=>r.transp===n);const av=rs.reduce((s,r)=>s+r.ciclo,0)/Math.max(1,rs.length);openModal(n,mg([['Caminhões',rs.length],['Ciclo médio',fmt(av)+' min'],['Toneladas',fmt(rs.reduce((s,r)=>s+r.liq,0))+' t'],['Acima de 45 min',rs.filter(r=>r.ciclo>45).length]])+`<table><tbody>${rs.slice(0,25).map(r=>`<tr data-act="drill:truck:${r.id}"><td class="mono"><b>${r.placa}</b></td><td>${r.tipo}</td><td class="num">${fmt(r.liq,1)} t</td><td class="num ${r.ciclo>45?'dn':''}">${fmt(r.ciclo)} min</td></tr>`).join('')}</tbody></table>`)}
+ else if(t==='truck'){const tk=allTrucks().find(x=>x.id===+a);if(!tk)return;const ev2=[[tk.ent,'Entrada na portaria','checklist de EPI e documentação'],tk.ini&&[tk.ini,'Pesagem na balança',`bruto ${fmt(tk.liq+16.5,1)} t · tara 16,5 t`],tk.ini&&[tk.ini+60,'Início da descarga','Moega '+((tk.moega??0)+1)],tk.sai&&[tk.sai,'Saída','ticket emitido']].filter(Boolean);
+  openModal('Caminhão '+tk.placa,mg([['Transportadora',tk.transp],['Tipo',tk.tipo],['Peso líquido',fmt(tk.liq,1)+' t'],['Ciclo',tk.ciclo?fmt(tk.ciclo)+' min':'em andamento']])+`<ul class="tl">${ev2.map(e=>`<li><b>${hhmm(e[0])}</b>${e[1]} <span style="color:var(--muted)">· ${e[2]}</span></li>`).join('')}</ul><p style="color:var(--muted);font-size:12.5px">Ticket ${String(880000+tk.id)} · Produto: açúcar VHP · NF vinculada ao lote L-2611</p>`)}
+ else if(t==='thist'){const x=trainHist.find(z=>z.id===a);if(!x)return;openModal('Composição '+x.id,mg([['Chegada',x.lab],['Toneladas',fmt(x.t)+' t'],['Estadia',fmt(x.est,1)+' h'],['Status',x.est>24?'Acima da meta':'No prazo']])+`<p><b>Paradas registradas:</b> ${x.par}</p><p style="color:var(--muted)">80 vagões HFT · média ${fmt(x.t/80,1)} t/vagão · destino: porto · lacres conferidos.</p>`)}
+ else if(t==='wag'){const T=S.train,i=+a;if(!T)return;const f=T.wagons[i];openModal(`Vagão ${String(i+1).padStart(2,'0')} · HFT ${608100+i*37}`,mg([['Composição',T.id],['Carga',fmt(f,1)+' t'],['Capacidade',CAPV+' t'],['Status',f>=CAPV?'Carregado':f>0?'Em carga':'Vazio']])+`<p>Lacre: <b class="mono">${f>=CAPV?'LC-'+(42000+i):'—'}</b> · Inspeção de limpeza: <b>OK</b> · Última manutenção: 14/10</p>`)}
+ else if(t==='cc'){const i=+a;openModal(COST_CC[i],mg([['Orçado','R$ '+fmt(ORC[i])+' mil'],['Realizado','R$ '+fmt(REAL[i])+' mil'],['Variação',(REAL[i]>ORC[i]?'+':'')+fmt((REAL[i]/ORC[i]-1)*100,1)+'%'],['Status',REAL[i]>ORC[i]?'Estourado':'Dentro']])+`<table><thead><tr><th>Item</th><th class="num">Realizado (R$ mil)</th><th class="num">% do centro</th></tr></thead><tbody>${CCITEMS[i].map(x=>`<tr><td>${x[0]}</td><td class="num">${fmt(REAL[i]*x[1],1)}</td><td class="num">${fmt(x[1]*100)}%</td></tr>`).join('')}</tbody></table>${REAL[i]>ORC[i]?`<p style="margin-top:14px"><b>Leitura:</b> o desvio vem principalmente de <b>${CCITEMS[i][0][0].toLowerCase()}</b>. Vale abrir o pedido no SAP (ME23N) e cruzar com as paradas do Pareto.</p>`:''}`)}
+ else if(t==='par'){const p=PAR.find(x=>x[0]===a);const r2=rng(a.length*13);const n=Math.max(3,Math.round(p[1]/5));openModal('Paradas — '+a,mg([['Horas no mês',fmt(p[1],1)+' h'],['Ocorrências',n],['Média',fmt(p[1]/n,1)+' h'],['t não embarcadas',fmt(p[1]*1220)]])+`<table><thead><tr><th>Data</th><th class="num">Duração</th><th>Trem afetado</th><th>Ação</th></tr></thead><tbody>${Array.from({length:n},(_,i)=>`<tr><td class="mono">${String(Math.max(1,9-Math.floor(i*8/n))).padStart(2,'0')}/11</td><td class="num">${fmt(p[1]/n*(.6+r2()*.8),1)} h</td><td class="mono">T-${4460+Math.floor(r2()*12)}</td><td>${pick(['Registrado em O.S.','Aguardando análise','Tratado no DDS','Plano de ação aberto'])}</td></tr>`).join('')}</tbody></table>`)}
+ else if(t==='lote'){const q=QUAL[+a];openModal('Lote '+q.id,mg([['Volume',fmt(q.vol)+' t'],['Pol',fmt(q.pol,2)+' °Z'],['Umidade',fmt(q.um,2)+'%'],['Cor ICUMSA',fmt(q.cor)]])+`<p>${q.ok?'Lote <b>conforme</b> para embarque — dentro de todos os limites de contrato.':`Lote <b class="dn">não conforme</b>: ${[q.pol<99.3&&'Pol abaixo de 99,30',q.um>.15&&'umidade acima de 0,15%',q.cor>1200&&'cor acima de 1.200 UI'].filter(Boolean).join(', ')}. Segregar e solicitar reanálise.`}</p>`)}
+ else if(t==='ind'){const r=IND[+a];openModal(r[0],mg([['Meta',r[1]],['Real',r[2]],['Status',r[3]==='g'?'Dentro':'Atenção'],['Mês','Novembro']])+'<p style="color:var(--muted)">Evolução nas últimas 12 semanas.</p>'+chBox,{type:'line',data:{labels:Array.from({length:12},(_,i)=>'S'+(i+34)),datasets:[{label:r[0],data:Array.from({length:12},(_,i)=>70+i*1.5+Math.sin(i)*6),borderColor:r[3]==='g'?G:r[3]==='o'?O2:Rr,tension:.3,pointRadius:3}]},options:O('',{plugins:{legend:{display:false}}})})}
+ else if(t==='col'){const e=EQ[+a];openModal(e.n,mg([['Função',e.f],['Turno',e.t+' · '+e.h],['Status',e.st[0]],['Banco de horas',e.he+' h']])+`<ul class="tl"><li><b>NR-11</b>Operação de equipamentos de transporte ${e.nr?'· em dia':'· <span class="wa">vence em 20 dias</span>'}</li><li><b>NR-35</b>Trabalho em altura · em dia</li><li><b>NR-12</b>Segurança em máquinas · em dia</li></ul>`)}
+ else if(t==='eq'){const id=a;const map={
+  port:['Portaria',[['Entradas hoje',S.trucks+S.queue.length],['Ritmo',fmt(S.ctrl.arr,1)+'×'],['Pico',S.fail.pico?'ATIVO':'não']],`<button class="ab ${S.fail.pico?'k':'r'}" data-act="fail:pico">${S.fail.pico?'Encerrar pico':'Simular pico de caminhões'}</button>`],
+  bal:['Balança BAL-01',[['Status',S.fail.balanca?'FALHA':'Operando'],['Fila',S.queue.length],['Aferição','02/11 · INMETRO']],`<button class="ab ${S.fail.balanca?'k':'r'}" data-act="fail:balanca">${S.fail.balanca?'Resolver falha':'Simular falha'}</button>`],
+  m0:['Moega 1',[['Status',S.ctrl.moega[0]?(S.moega[0]?'Descarregando '+S.moega[0].tk.placa:'Livre'):'Bloqueada'],['Restante',S.moega[0]?fmt(S.moega[0].rem/60)+' min':'—'],['Grelha','inspecionada 08/11']],`<button class="ab" data-act="moega:0">${S.ctrl.moega[0]?'Bloquear moega':'Liberar moega'}</button>`],
+  m1:['Moega 2',[['Status',S.ctrl.moega[1]?(S.moega[1]?'Descarregando '+S.moega[1].tk.placa:'Livre'):'Bloqueada'],['Restante',S.moega[1]?fmt(S.moega[1].rem/60)+' min':'—'],['Grelha','inspecionada 08/11']],`<button class="ab" data-act="moega:1">${S.ctrl.moega[1]?'Bloquear moega':'Liberar moega'}</button>`],
+  tc:['Correias TC-01 / TC-02',[['Status',S.fail.correia?'FALHA':loadingNow()?'Em carga':'Parada'],['Disponibilidade','95,8%'],['Próx. preventiva','hoje 14:00']],`<button class="ab ${S.fail.correia?'k':'r'}" data-act="fail:correia">${S.fail.correia?'Resolver falha':'Simular falha na correia'}</button>`],
+  tor:['Torre de carregamento TOR-01',[['Status',loadingNow()?'Carregando':'Parada'],['Taxa',fmt(S.ctrl.rate)+' t/h'],['Embarcado hoje',fmt(S.shipped)+' t']],`<button class="ab ${S.ctrl.tower?'r':''}" data-act="torre">${S.ctrl.tower?'Parar torre':'Religar torre'}</button><button class="ab k" data-act="fail:chuva">${S.fail.chuva?'Encerrar chuva':'Simular chuva'}</button>`],
+  trem:['Ferrovia',[['Composição',S.train?S.train.id:'—'],['Vagões',S.fail.vagao?'em falta':'disponíveis'],['Próximo',S.train?'—':hhmm(S.t+Math.max(0,S.nextTrain))]],`<button class="ab" data-act="trem">Chamar trem</button><button class="ab ${S.fail.vagao?'k':'r'}" data-act="fail:vagao">${S.fail.vagao?'Resolver falta':'Simular falta de vagão'}</button>`]}[id];
+  openModal(map[0],mg(map[1].concat([['Atualizado',hhmm(S.t)]]))+`<div class="acts">${map[2]}</div>`)}
+}
+
+/* ===================== simulador E se ===================== */
+const ESD=[['moe','Moegas ativas',1,4,1,2,''],['td','Tempo de descarga',5,12,.5,7.5,'min'],['lam','Chegada de caminhões',6,24,1,12,'cam/h'],['carga','Carga média',32,54,1,43,'t'],['taxa','Taxa da torre',800,2000,50,1200,'t/h'],['vag','Vagões por trem',60,100,5,80,''],['int','Intervalo entre trens',1,6,.25,3.25,'h'],['par','Paradas por dia',0,8,.5,1.5,'h']];
+const ES={};ESD.forEach(d=>ES[d[0]]=d[5]);const ESB={...ES};
+$('#esIn').innerHTML=ESD.map(d=>`<div class="sl"><label>${d[1]} <b id="ev_${d[0]}"></b></label><input type="range" min="${d[2]}" max="${d[3]}" step="${d[4]}" value="${d[5]}" data-es="${d[0]}"></div>`).join('');
+$('#esIn').addEventListener('input',e=>{const k=e.target.dataset.es;if(k){ES[k]=+e.target.value;esCalc()}});
+const PRE={pico:{lam:18},moega:{moe:3},torre:{taxa:1800},chuva:{par:5},base:{...ESB}};
+$$('[data-pre]').forEach(b=>b.onclick=()=>{Object.assign(ES,b.dataset.pre==='base'?ESB:{...ESB,...PRE[b.dataset.pre]});$$('[data-es]').forEach(i=>i.value=ES[i.dataset.es]);esCalc()});
+function erlang(c,a){if(a>=c)return 1;let s=0,t=1;for(let k=0;k<c;k++){if(k>0)t*=a/k;s+=t}const tc=t*a/c;const top=tc*c/(c-a);return top/(s+top)}
+function model(p){const mu=60/p.td,a=p.lam/mu,rho=a/p.moe;let Wq=Infinity,Lq=Infinity;if(rho<1){const C=erlang(p.moe,a);Lq=C*a/(p.moe-a);Wq=Lq/p.lam*60}
+ const capM=p.moe*mu*p.carga*24,dem=p.lam*p.carga*24,recv=Math.min(capM,dem),tL=p.vag*CAPV/p.taxa,ciclo=tL+1.17+p.int,trens=(24-p.par)/ciclo,shipCap=trens*p.vag*CAPV,ship=Math.min(shipCap,recv*1.0+500),
+ est=tL+1.17+p.par*(tL/24),fixed=36000+p.moe*1800+p.taxa*5.2,cost=(fixed+2.9*ship)/ship,ciclo2=Wq===Infinity?999:Wq+p.td+12,gap=recv-shipCap;
+ return{rho,Wq,Lq,recv,dem,capM,shipCap,ship,est,cost,ciclo:ciclo2,gap,trens}}
+let ESK=1;(function(){const b=model(ESB);ESK=10.62/b.cost})();
+function esCalc(){ESD.forEach(d=>set('ev_'+d[0],fmt(ES[d[0]],d[4]<1?(d[4]<.5?2:1):0)+(d[6]?' '+d[6]:'')));
+ const b=model(ESB),s=model(ES);const inf=x=>x===Infinity||x>=999;
+ const IL=inf(s.Lq);const T=[['Fila média',IL?'∞':fmt(s.Lq,1)+' cam',s.Lq,b.Lq,1,1,IL],['Espera na fila',IL?'∞':fmt(s.Wq)+' min',s.Wq,b.Wq,1,0,IL],['Utilização moegas',fmt(s.rho*100)+'%',s.rho*100,b.rho*100,1,0],['Recebimento/dia',fmt(s.recv)+' t',s.recv,b.recv,0,0],['Embarque possível/dia',fmt(s.shipCap)+' t',s.shipCap,b.shipCap,0,0],['Estadia do trem',fmt(s.est,1)+' h',s.est,b.est,1,1],['Trens por dia',fmt(s.trens,2),s.trens,b.trens,0,2],['Custo por tonelada','R$ '+fmt(s.cost*ESK,2),s.cost*ESK,b.cost*ESK,1,2],['Saldo do armazém/dia',(s.gap>=0?'+':'')+fmt(s.gap)+' t',s.gap,b.gap,2,0]];
+ $('#esOut').innerHTML=T.map(([l,v,x,y,lowGood,dd,isInf])=>{let cl='',tx='= atual';if(isInf){cl='dn';tx='fila sem limite'}else{const d=x-y;if(Math.abs(d)>.005&&lowGood!==2){const good=lowGood?d<0:d>0;cl=good?'up':'dn';tx=(d>0?'▲ ':'▼ ')+fmt(Math.abs(d),dd)+' vs atual'}else if(lowGood===2&&Math.abs(d)>1){cl='wa';tx=(d>0?'▲ ':'▼ ')+fmt(Math.abs(d))+' t vs atual'}}return`<div class="rt2"><span>${l}</span><b class="${isInf?'dn':''}">${v}</b><em class="${cl}">${tx}</em></div>`}).join('');
+ let vc,vt,vd;if(s.rho>=1){vc='r';vt='Fila explode: as moegas não dão conta';vd=`Chegam ${fmt(ES.lam)} cam/h e as moegas descarregam ${fmt(ES.moe*60/ES.td,1)} cam/h. Aumente moegas ou reduza o tempo de descarga.`}
+ else if(s.gap>800){vc='o';vt='Gargalo na ferrovia: o armazém vai encher';vd=`Entra ${fmt(s.gap)} t/dia a mais do que a torre consegue embarcar. O armazém lota em ~${fmt(Math.max(0,(60000-S.stock)/s.gap),1)} dias. Aumente a taxa da torre ou reduza o intervalo entre trens.`}
+ else if(s.gap<-800){vc='b';vt='Torre ociosa: falta açúcar chegando';vd=`A torre consegue embarcar ${fmt(-s.gap)} t/dia a mais do que o recebimento entrega. O gargalo passa a ser o recebimento rodoviário.`}
+ else{vc='g';vt='Cenário equilibrado';vd=`Recebimento e embarque andam juntos (diferença de ${fmt(Math.abs(s.gap))} t/dia), com fila média de ${fmt(s.Lq,1)} caminhão(ões).`}
+ const bg={r:'rgba(214,69,69,.12)',o:'rgba(224,123,34,.13)',b:'rgba(47,111,179,.12)',g:'rgba(46,158,91,.12)'}[vc];
+ $('#verdict').innerHTML=`<div class="verdict" style="background:${bg};border-left:5px solid ${COL[vc]}"><div><b>${vt}</b>${vd}</div></div>`;
+ if(CH.chEs1){CH.chEs1.data.datasets[1].data=[Math.round(s.dem),Math.round(s.capM),Math.round(s.shipCap)];CH.chEs1.update();
+  const xs=[];for(let l=4;l<=30;l+=1)xs.push(l);CH.chEs2.data.labels=xs;CH.chEs2.data.datasets[0].data=xs.map(l=>{const m=model({...ES,lam:l});return m.rho>=1?null:+Math.min(m.Lq,40).toFixed(2)});CH.chEs2.data.datasets[1].data=xs.map(l=>l===Math.round(ES.lam)?(s.rho<1?+Math.min(s.Lq,20).toFixed(2):20):null);CH.chEs2.update()}}
+function esCharts(){const b=model(ESB),mut=css('--muted'),Y=css('--y'),Rr=css('--r'),line=css('--line');
+ mk('chEs1',{type:'bar',data:{labels:['Demanda de caminhões','Capacidade das moegas','Capacidade de embarque'],datasets:[{label:'Atual',data:[b.dem,b.capM,b.shipCap].map(Math.round),backgroundColor:mut+'66',borderRadius:5},{label:'Cenário',data:[0,0,0],backgroundColor:Y,borderRadius:5}]},options:O('t/dia',{scales:{x:{grid:{display:false},ticks:{autoSkip:false}},y:{grid:{color:line},beginAtZero:true}}})});
+ mk('chEs2',{type:'line',data:{labels:[],datasets:[{label:'Fila média (cam)',data:[],borderColor:css('--b'),backgroundColor:css('--b')+'22',fill:true,tension:.3,pointRadius:0,spanGaps:false},{label:'Seu cenário',data:[],borderColor:Rr,backgroundColor:Rr,pointRadius:7,showLine:false}]},options:O('cam',{scales:{x:{grid:{display:false},title:{display:true,text:'caminhões por hora'}},y:{grid:{color:line},beginAtZero:true,max:20}}})});
+ esCalc()}
+function esApply(){S.ctrl.rate=Math.min(1800,Math.max(800,ES.taxa));S.ctrl.arr=+(ES.lam/12).toFixed(1);S.ctrl.desc=ES.td/7.5;S.ctrl.moega=[ES.moe>=1,ES.moe>=2];ev('info',`Cenário aplicado: torre ${fmt(S.ctrl.rate)} t/h, ritmo ${fmt(S.ctrl.arr,1)}×, descarga ${fmt(ES.td,1)} min`);toast('Cenário aplicado na simulação — veja na Sala de Controle');updConsole()}
+
+/* ===================== 3D ===================== */
+const V={};const TX=12;
+function setBg(){if(!V.sc)return;const dk=document.documentElement.dataset.theme==='dark',rain=S.fail.chuva>0;const c=rain?(dk?0x15181b:0x8e979f):(dk?0x1d2125:0xcfd6dc);V.sc.background=new THREE.Color(c);V.sc.fog=new THREE.Fog(c,rain?160:260,rain?380:520);V.bgRain=rain}
+function label(t,x,y,z,s=1){const f='700 44px Inter, sans-serif';const m=document.createElement('canvas').getContext('2d');m.font=f;const w=Math.ceil(m.measureText(t).width)+64;const c=document.createElement('canvas');c.width=w;c.height=96;const g=c.getContext('2d');g.fillStyle='rgba(28,32,37,.92)';const r=14;g.beginPath();g.moveTo(r,4);g.lineTo(w-r,4);g.quadraticCurveTo(w,4,w,4+r);g.lineTo(w,92-r);g.quadraticCurveTo(w,92,w-r,92);g.lineTo(r,92);g.quadraticCurveTo(0,92,0,92-r);g.lineTo(0,4+r);g.quadraticCurveTo(0,4,r,4);g.fill();g.fillStyle='#f2b705';g.fillRect(0,18,10,60);g.fillStyle='#fff';g.font=f;g.textBaseline='middle';g.fillText(t,32,50);const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),depthWrite:false}));const h=5.2*s;sp.scale.set(h*w/96,h,1);sp.position.set(x,y,z);V.sc.add(sp);return sp}
+function init3D(){const host=$('#scene');if(!window.THREE){host.innerHTML='<div style="display:grid;place-items:center;height:100%;color:#555">Visualização 3D indisponível (biblioteca não carregou).</div>';return}
+ const r=new THREE.WebGLRenderer({antialias:true});r.setPixelRatio(Math.min(2,devicePixelRatio));r.shadowMap.enabled=true;r.shadowMap.type=THREE.PCFSoftShadowMap;host.prepend(r.domElement);
+ const sc=new THREE.Scene(),cam=new THREE.PerspectiveCamera(42,1,1,1400);Object.assign(V,{r,sc,cam,host,trucks:new Map(),last:Date.now()});setBg();
+ sc.add(new THREE.HemisphereLight(0xffffff,0x6d6450,.55));const dl=new THREE.DirectionalLight(0xfff6e8,.7);dl.position.set(90,150,-70);dl.castShadow=true;dl.shadow.mapSize.set(2048,2048);Object.assign(dl.shadow.camera,{left:-180,right:180,top:120,bottom:-120,far:450});sc.add(dl);V.dl=dl;
+ const M=c=>new THREE.MeshLambertMaterial({color:c});
+ const box=(w,h,d,c,x,y,z,p=sc)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),M(c));m.position.set(x,y,z);m.castShadow=m.receiveShadow=true;p.add(m);return m};V.box=box;
+ const gr=new THREE.Mesh(new THREE.PlaneGeometry(1000,1000),M(0x7f9466));gr.rotation.x=-Math.PI/2;gr.receiveShadow=true;sc.add(gr);
+ box(320,.4,92,0xb3ada2,0,.2,-4);box(340,.45,9,0x55595e,0,.25,-26);for(let x=-165;x<170;x+=8)box(3.5,.05,.35,0xf2f2f2,x,.5,-26);
+ box(340,.3,7,0x9b958b,0,.32,24);box(340,.3,.25,0x8a8f96,0,.75,23.2);box(340,.3,.25,0x8a8f96,0,.75,24.8);
+ const sl=new THREE.InstancedMesh(new THREE.BoxGeometry(.9,.25,3.6),M(0x6b5a4a),178);const o=new THREE.Object3D();for(let i=0;i<178;i++){o.position.set(-169+i*1.9,.55,24);o.updateMatrix();sl.setMatrixAt(i,o.matrix)}sl.receiveShadow=true;sc.add(sl);
+ const arm=new THREE.Group();sc.add(arm);arm.userData.click=infoArm;
+ box(64,12,22,0xebe8e1,0,6,0,arm);box(64.4,1.1,22.4,0xf2b705,0,1.1,0,arm);
+ const a=Math.atan2(6,11),Ls=Math.hypot(6,11)+.8;const r1=box(65,.6,Ls,0x5d7184,0,15,5.5,arm);r1.rotation.x=a;const r2=box(65,.6,Ls,0x5d7184,0,15,-5.5,arm);r2.rotation.x=-a;
+ for(const x of [-31.9,31.9]){const sh=new THREE.Shape();sh.moveTo(-11,0);sh.lineTo(11,0);sh.lineTo(0,6);sh.lineTo(-11,0);const gm=new THREE.Mesh(new THREE.ExtrudeGeometry(sh,{depth:.3,bevelEnabled:false}),M(0xdedbd3));gm.rotation.y=Math.PI/2;gm.position.set(x-.15,12,0);arm.add(gm)}
+ for(const x of [-15,5,22])box(6,7,.3,0x3b4148,x,3.5,-11.1,arm);
+ label('ARMAZÉM · 60.000 t',0,23,0,1.05);
+ V.mx=[-15,5];V.lamp=[];
+ V.mx.forEach((x,i)=>{const g=new THREE.Group();sc.add(g);g.userData.click=()=>infoMoega(i);box(10,.5,10,0x8d949c,x,8,-16,g);[[-4.5,-20.5],[4.5,-20.5],[-4.5,-11.5],[4.5,-11.5]].forEach(([dx,dz])=>box(.5,8,.5,0x6b7178,x+dx,4,dz,g));box(7,.12,6,0x1e2124,x,.48,-16,g);
+  const l=new THREE.Mesh(new THREE.SphereGeometry(.95,16,12),new THREE.MeshBasicMaterial({color:0x2e9e5b}));l.position.set(x+4.6,9,-20.6);g.add(l);V.lamp.push(l);label('MOEGA '+(i+1),x,12.5,-16,.75)});
+ const bal=new THREE.Group();sc.add(bal);bal.userData.click=infoBal;box(20,.4,5.4,0x7a7f86,-62,.6,-26,bal);box(20,.45,.4,0xf2b705,-62,.62,-28.8,bal);box(20,.45,.4,0xf2b705,-62,.62,-23.2,bal);box(3.6,3.2,3.6,0xe6e2d8,-62,1.8,-33,bal);box(4.4,.4,4.4,0x5d7184,-62,3.6,-33,bal);
+ V.balL=new THREE.Mesh(new THREE.SphereGeometry(.9,16,12),new THREE.MeshBasicMaterial({color:0x2e9e5b}));V.balL.position.set(-62,4.6,-33);bal.add(V.balL);label('BALANÇA',-62,8.5,-30,.75);
+ const por=new THREE.Group();sc.add(por);por.userData.click=infoPort;box(4,3.4,4,0xe6e2d8,-128,1.9,-33.5,por);box(5,.4,5,0x5d7184,-128,3.8,-33.5,por);box(.6,1.6,.6,0xf2b705,-124,.9,-30.6,por);
+ V.arm=new THREE.Group();V.arm.position.set(-124,1.6,-30.6);por.add(V.arm);box(.35,.35,8.5,0xd64545,0,0,4.25,V.arm);label('PORTARIA',-128,8.5,-33,.75);
+ const tor=new THREE.Group();sc.add(tor);tor.userData.click=infoTorre;[[-3,-3.6],[3,-3.6],[-3,3.6],[3,3.6]].forEach(([dx,dz])=>box(.7,20,.7,0x8e979f,TX+dx,10,24+dz,tor));box(8,4,9,0x9aa3ad,TX,21,24,tor);box(8.2,.8,9.2,0xf2b705,TX,19.3,24,tor);
+ const ch=new THREE.Mesh(new THREE.CylinderGeometry(.8,1.1,8,14),M(0x6b7178));ch.position.set(TX,15,24);tor.add(ch);
+ V.beacon=new THREE.Mesh(new THREE.SphereGeometry(1.1,16,12),new THREE.MeshBasicMaterial({color:0xd64545}));V.beacon.position.set(TX,23.8,24);tor.add(V.beacon);
+ V.stream=new THREE.Mesh(new THREE.CylinderGeometry(.35,.55,7.2,10),new THREE.MeshBasicMaterial({color:0xf4efe0,transparent:true,opacity:.85}));V.stream.position.set(TX,7.4,24);sc.add(V.stream);
+ label('TORRE DE CARREGAMENTO',TX,28.5,24,.85);
+ V.c0=new THREE.Vector3(TX,12.5,11.2);V.c1=new THREE.Vector3(TX,20.5,19.6);const cl=V.c0.distanceTo(V.c1);V.belt=box(2.6,1.5,cl,0xb7bec6,TX,(V.c0.y+V.c1.y)/2,(V.c0.z+V.c1.z)/2,tor);V.belt.rotation.x=-Math.atan2(V.c1.y-V.c0.y,V.c1.z-V.c0.z);
+ V.parts=Array.from({length:14},(_,i)=>{const p=new THREE.Mesh(new THREE.BoxGeometry(.7,.5,.7),new THREE.MeshBasicMaterial({color:0xfaf6ea}));p.userData.s=i/14;sc.add(p);return p});
+ const tg=new THREE.ConeGeometry(3,9,7),tt=new THREE.CylinderGeometry(.5,.6,3,6);for(let i=0;i<46;i++){const ang=i/46*Math.PI*2,rad=rand(175,240);const x=Math.cos(ang)*rad,z=Math.sin(ang)*rad*.55;const c=new THREE.Mesh(tg,M(pick([0x4f7a3f,0x5d8a46,0x456d38])));c.position.set(x,6.5,z);c.castShadow=true;sc.add(c);const t=new THREE.Mesh(tt,M(0x6b4f35));t.position.set(x,1.5,z);sc.add(t)}
+ // chuva
+ const rg=new THREE.BufferGeometry(),N=2600,pos=new Float32Array(N*3);for(let i=0;i<N;i++){pos[i*3]=mr(-180,180);pos[i*3+1]=mr(0,90);pos[i*3+2]=mr(-90,80)}rg.setAttribute('position',new THREE.BufferAttribute(pos,3));
+ V.rain=new THREE.Points(rg,new THREE.PointsMaterial({color:0xaec4d8,size:.7,transparent:true,opacity:.75}));V.rain.visible=false;sc.add(V.rain);
+ V.train=new THREE.Group();sc.add(V.train);V.wag=[];const fillM=M(0xf4efe0);
+ for(let i=0;i<NV;i++){const w=new THREE.Group();box(3.4,2.5,2.9,0x8a5a3e,0,2.25,0,w);box(3,.6,2.5,0x26292d,0,.85,0,w);const f=new THREE.Mesh(new THREE.BoxGeometry(3.1,1,2.5),fillM);f.castShadow=true;w.add(f);w.userData.f=f;w.userData.click=()=>infoVagao(i);w.position.z=24;V.train.add(w);V.wag.push(w)}
+ V.loco=[0,1].map(()=>{const l=new THREE.Group();box(6.2,3,3,0xf2b705,0,2.7,0,l);box(6.3,.7,3.05,0x26292d,0,1.9,0,l);box(2,1.3,2.8,0x2a3a4a,1.9,4.8,0,l);box(5.6,.6,2.6,0x26292d,0,.85,0,l);l.position.z=24;l.userData.click=infoTrem;V.train.add(l);return l});
+ V.cs={th:Math.PI+.55,ph:.95,r:170,tx:5,ty:0,tz:0};V.goal=null;
+ const cv=r.domElement,P=new Map();let moved=0,pd=0;
+ cv.addEventListener('pointerdown',e=>{cv.setPointerCapture(e.pointerId);P.set(e.pointerId,[e.clientX,e.clientY]);moved=0;V.last=Date.now();V.goal=null;if(P.size===2){const [a,b]=[...P.values()];pd=Math.hypot(a[0]-b[0],a[1]-b[1])}});
+ cv.addEventListener('pointermove',e=>{if(!P.has(e.pointerId))return;const [px,py]=P.get(e.pointerId);const dx=e.clientX-px,dy=e.clientY-py;P.set(e.pointerId,[e.clientX,e.clientY]);V.last=Date.now();
+  if(P.size===2){const [a,b]=[...P.values()];const d=Math.hypot(a[0]-b[0],a[1]-b[1]);if(pd)V.cs.r=Math.max(45,Math.min(360,V.cs.r*pd/d));pd=d;moved+=10;return}
+  moved+=Math.abs(dx)+Math.abs(dy);V.cs.th-=dx*.006;V.cs.ph=Math.max(.2,Math.min(1.45,V.cs.ph-dy*.005))});
+ cv.addEventListener('pointerup',e=>{if(P.size===1&&moved<6)pick3d(e);P.delete(e.pointerId);if(P.size<2)pd=0});cv.addEventListener('pointercancel',e=>P.delete(e.pointerId));
+ cv.addEventListener('wheel',e=>{e.preventDefault();V.goal=null;V.last=Date.now();V.cs.r=Math.max(45,Math.min(360,V.cs.r*(1+e.deltaY*.0011)))},{passive:false});
+ new ResizeObserver(size3D).observe(host);
+ $$('[data-cam]').forEach(b=>b.onclick=()=>{V.last=Date.now();V.goal={geral:{th:Math.PI+.55,ph:.95,r:170,tx:5,ty:0,tz:0},rec:{th:Math.PI+.25,ph:1.02,r:105,tx:-45,ty:0,tz:-22},trem:{th:.55,ph:1.08,r:80,tx:TX,ty:6,tz:24},topo:{th:Math.PI,ph:.22,r:250,tx:0,ty:0,tz:0}}[b.dataset.cam]});
+ size3D()}
+function size3D(){if(!V.r)return;const w=V.host.clientWidth,h=V.host.clientHeight;if(!w||!h)return;V.r.setSize(w,h);V.cam.aspect=w/h;V.cam.updateProjectionMatrix()}
+function pick3d(e){const rc=V.r.domElement.getBoundingClientRect();const m=new THREE.Vector2((e.clientX-rc.left)/rc.width*2-1,-(e.clientY-rc.top)/rc.height*2+1);const rr=new THREE.Raycaster();rr.setFromCamera(m,V.cam);const hit=rr.intersectObjects(V.sc.children,true).find(h=>!h.object.isSprite&&!h.object.isPoints);if(!hit)return;let o=hit.object;while(o&&!o.userData.click)o=o.parent;if(o)openInfo(o.userData.click)}
+function openInfo(fn){V.infoFn=fn;const b=$('#info3d');b.style.display='block';b.innerHTML=`<div class="ib">${fn()}</div>`}
+$('#info3d').addEventListener('click',e=>{if(e.target.dataset.x!==undefined){$('#info3d').style.display='none';V.infoFn=null}});
+const head=t=>`<h4>${t}<button data-x>×</button></h4>`;
+function infoArm(){return head('Armazém de açúcar VHP')+row('Estoque',fmt(S.stock)+' t')+row('Ocupação',fmt(S.stock/S.cap*100,1)+'%')+row('Entradas hoje',fmt(S.recv)+' t')+row('Saídas hoje',fmt(S.shipped)+' t')+`<div class="acts"><button class="ab" data-act="drill:est">Ver lotes</button></div>`}
+function infoMoega(i){const m=S.moega[i];return head('Moega '+(i+1))+row('Status',!S.ctrl.moega[i]?'Bloqueada':m?'Descarregando':'Livre')+(m?row('Caminhão',m.tk.placa)+row('Carga',fmt(m.tk.liq,1)+' t')+row('Restante',fmt(Math.max(0,m.rem)/60)+' min'):row('Fila',S.queue.length+' caminhões'))+`<div class="acts"><button class="ab ${S.ctrl.moega[i]?'r':''}" data-act="moega:${i}">${S.ctrl.moega[i]?'Bloquear':'Liberar'}</button></div>`}
+function infoBal(){const q=S.bal&&S.bal.tk;return head('Balança BAL-01')+row('Status',S.fail.balanca?'FALHA':'Operando')+row('Na plataforma',q?q.placa:'—')+row('Fila',S.queue.length+' caminhões')+`<div class="acts"><button class="ab ${S.fail.balanca?'':'r'}" data-act="fail:balanca">${S.fail.balanca?'Resolver falha':'Simular falha'}</button><button class="ab k" data-act="drill:fila">Ver fila</button></div>`}
+function infoPort(){return head('Portaria')+row('Entradas hoje',fmt(S.trucks+S.queue.length+S.moega.filter(Boolean).length))+row('Ritmo de chegada',fmt(S.ctrl.arr,1)+'×')+row('Checklist NR / EPI','100% conforme')+`<div class="acts"><button class="ab ${S.fail.pico?'':'r'}" data-act="fail:pico">${S.fail.pico?'Encerrar pico':'Simular pico'}</button></div>`}
+function infoTorre(){const T=S.train;return head('Torre TOR-01')+row('Status',loadingNow()?'Carregando':T&&T.block?'Parada — '+T.block.toLowerCase():'Parada')+row('Taxa',loadingNow()?fmt(S.ctrl.rate)+' t/h':'0 t/h')+row('Embarcado hoje',fmt(S.shipped)+' t')+`<div class="acts"><button class="ab ${S.ctrl.tower?'r':''}" data-act="torre">${S.ctrl.tower?'Parar torre':'Religar'}</button><button class="ab k" data-act="fail:correia">${S.fail.correia?'Resolver correia':'Falha correia'}</button></div>`}
+function infoTrem(){const T=S.train;if(!T)return head('Trem')+row('Status','sem composição');return head('Composição '+T.id)+row('Status',trainStatus(T)[0])+row('Vagões',Math.min(T.idx,NV)+'/80')+row('Carga',fmt(loaded(T))+' t')+row('Estadia',fmt((S.abs-T.cheg)/3600,1)+' h')+`<div class="acts"><button class="ab" data-act="drill:trem">Detalhar</button></div>`}
+function infoVagao(i){const T=S.train;if(!T)return head('Vagão');const f=T.wagons[i];return head(`Vagão ${String(i+1).padStart(2,'0')}`)+row('Composição',T.id)+row('Carga',fmt(f,1)+' / '+CAPV+' t')+row('Status',f>=CAPV?'Carregado':f>0?'Em carga':'Vazio')+row('Lacre',f>=CAPV?'LC-'+(42000+i):'—')}
+function infoTruck(tk){return()=>head('Caminhão '+tk.placa)+row('Transportadora',tk.transp)+row('Tipo',tk.tipo)+row('Peso líquido',fmt(tk.liq,1)+' t')+row('Etapa',{fila:'Na fila',bal:'Pesando na balança',moega:tk.atM?'Descarregando':'Indo para a moega',saida:'Saindo'}[tk.stage])+row('No terminal',fmt(((tk.sai||S.abs)-tk.ent)/60)+' min')+`<div class="acts"><button class="ab k" data-act="drill:truck:${tk.id}">Linha do tempo</button></div>`}
+const TCOL=[0xd64545,0x2f6fb3,0xf0f0f0,0x2e9e5b,0xe07b22,0x444a52];
+function truckMesh(tk){const g=new THREE.Group(),b=V.box;b(2.6,3,2.6,TCOL[tk.id%6],0,2.1,0,g);b(.2,1.2,2.2,0x9ec3e0,1.32,2.8,0,g);b(2.2,.7,2.4,0x222222,0,.75,0,g);let x=-1.6;tk.seg.forEach(L=>{x-=L/2+.35;b(L,2.6,2.5,0xc9b98f,x,2.4,0,g);b(L*.8,.7,2.3,0x222222,x,.75,0,g);x-=L/2});g.userData.click=infoTruck(tk);return g}
+const tLen=tk=>1.6+tk.seg.reduce((a,b)=>a+b+.35,0);
+function syncTrucks(dt){const live=new Map();
+ let qx=-58;if(S.bal){live.set(S.bal.tk.id,{tk:S.bal.tk,k:'bal',x:qx});qx-=tLen(S.bal.tk)+3}else qx-=17;S.queue.forEach(tk=>{live.set(tk.id,{tk,k:'fila',x:qx});qx-=tLen(tk)+3});
+ S.moega.forEach((m,i)=>m&&live.set(m.tk.id,{tk:m.tk,k:'moega',mx:V.mx[i]+4}));
+ S.exiting.forEach(tk=>live.set(tk.id,{tk,k:'saida'}));
+ live.forEach((v,id)=>{if(!V.trucks.has(id)){const g=truckMesh(v.tk);g.userData.len=tLen(v.tk);let sx=Math.min(-235,(v.x??-235)-6);V.trucks.forEach(o=>{if(o.position.z<-23)sx=Math.min(sx,o.position.x-o.userData.len-4)});if(!V.synced){if(v.k==='moega')g.position.set(v.mx,0,-16);else if(v.x!==undefined)g.position.set(v.x,0,-26);else g.position.set(sx,0,-26)}else g.position.set(sx,0,-26);V.sc.add(g);V.trucks.set(id,g)}});
+ V.trucks.forEach((g,id)=>{const L=live.get(id);if(L&&g.position.x>212)L.tk.gone=true;if(!L||g.position.x>212){V.sc.remove(g);V.trucks.delete(id)}});
+ V.synced=true;
+ if(dt<=0)return;
+ const sp=dt*(S.speed>=300?42:S.speed>=60?22:12);
+ const onRoad=g=>g.position.z<-23;
+ // só um caminhão por vez manobrando entre a estrada e as moegas no mesmo trecho
+ const trans=g=>g.position.z>-25.8&&g.position.z<-16.3;
+ const clash=g=>[...V.trucks.values()].some(o=>o!==g&&trans(o)&&o.position.x+6.3>g.position.x-g.userData.len&&g.position.x+6.3>o.position.x-o.userData.len);
+ // processa de frente para trás para respeitar a distância entre caminhões
+ const all=[...V.trucks.entries()].sort((a,b)=>b[1].position.x-a[1].position.x);
+ for(const [id,g] of all){const L=live.get(id),p=g.position;let tx,tz;
+  if(L.k==='fila'||L.k==='bal'){tx=L.x;tz=-26}
+  else if(L.k==='moega'){if(p.z<-25.5&&p.x<L.mx-9){tx=L.mx-9;tz=-26}else if(p.z<-25.5&&clash(g)){tx=p.x;tz=-26}else{tx=L.mx;tz=-16}}
+  else{if(g.userData.ex===undefined)g.userData.ex=p.x+11;
+   if(p.z>-25.9){tx=g.userData.ex;tz=-26;
+    // só volta para a estrada quando houver espaço livre
+    const blocked=[...V.trucks.values()].some(o=>o!==g&&o.position.z<-24.5&&o.position.x>g.userData.ex-g.userData.len-4&&o.position.x-o.userData.len<g.userData.ex+4);
+    if((blocked||(!trans(g)&&clash(g)))&&p.z>-19){tx=p.x;tz=p.z}}
+   else{tx=240;tz=-26}}
+  // distância mínima para o caminhão da frente na estrada
+  if(tz===-26&&onRoad(g)&&tx>p.x){let lim=Infinity;for(const o of V.trucks.values()){if(o===g||!onRoad(o)||o.position.x<=p.x)continue;lim=Math.min(lim,o.position.x-o.userData.len-2.8)}tx=Math.max(p.x,Math.min(tx,lim))}
+  const dx=tx-p.x,dz=tz-p.z,d=Math.hypot(dx,dz);
+  if(L.k==='bal')L.tk.atBal=d<.4&&Math.abs(p.x-L.x)<.4;if(L.k==='moega')L.tk.atM=tz===-16&&d<.4;
+  if(d<.03){g.rotation.y*=.9;continue}
+  const s=Math.min(d,sp);p.x+=dx/d*s;p.z+=dz/d*s;
+  if(d>.6){const tr=Math.atan2(-dz,dx);let df=tr-g.rotation.y;df=Math.atan2(Math.sin(df),Math.cos(df));g.rotation.y+=df*Math.min(1,dt*6)}else g.rotation.y*=.9}}
+let blinkT=0;
+function render3D(dt){if(!V.r||cur!=='sala')return;const c=V.cs;blinkT+=dt;
+ if(V.goal){for(const k in V.goal)c[k]+=(V.goal[k]-c[k])*Math.min(1,dt*3)}else if(Date.now()-V.last>7000)c.th+=dt*.035;
+ V.cam.position.set(c.tx+c.r*Math.sin(c.ph)*Math.sin(c.th),c.ty+c.r*Math.cos(c.ph),c.tz+c.r*Math.sin(c.ph)*Math.cos(c.th));V.cam.lookAt(c.tx,c.ty,c.tz);
+ syncTrucks(S.run?dt:0);
+ V.lamp.forEach((l,i)=>l.material.color.setHex(!S.ctrl.moega[i]?0xd64545:S.moega[i]?0xe07b22:0x2e9e5b));
+ V.balL.material.color.setHex(S.fail.balanca?(blinkT%1<.5?0xff3030:0x551111):0x2e9e5b);
+ const bad=S.fail.correia>0||!S.ctrl.tower;V.beacon.material.color.setHex(bad?(blinkT%.8<.4?0xff3030:0x441111):loadingNow()?0xe07b22:0x2e9e5b);
+ V.belt.material.color.setHex(S.fail.correia?0xb84a4a:0xb7bec6);
+ if(S.gate>0&&S.run)S.gate=Math.max(0,S.gate-dt*.7);V.arm.rotation.x=-Math.min(1,S.gate*2.2)*1.3;
+ const rain=S.fail.chuva>0;if(rain!==V.bgRain)setBg();V.rain.visible=rain;if(rain&&S.run){const p=V.rain.geometry.attributes.position;for(let i=0;i<p.count;i++){let y=p.getY(i)-dt*70;if(y<0)y=90;p.setY(i,y)}p.needsUpdate=true}
+ const T=S.train,loading=loadingNow()&&S.run;
+ V.stream.visible=!!loading;V.parts.forEach(p=>{p.visible=!!loading;if(loading){p.userData.s=(p.userData.s+dt*.45)%1;p.position.lerpVectors(V.c0,V.c1,p.userData.s);p.position.y+=1}});
+ if(!T)V.train.visible=false;else{V.train.visible=true;const fl=T.idx<NV?T.wagons[T.idx]/CAPV:0,prog=Math.min(NV,T.idx+fl);let off=0;if(T.status==='manobra')off=-(T.rem/2400)*300;if(T.status==='partida')off=(1-T.rem/900)*430;
+  V.wag.forEach((w,i)=>{const x=TX+(prog-i-.5)*3.7+off;w.position.x=x;w.visible=x>-215&&x<225;const f=T.wagons[i]/CAPV;w.userData.f.visible=f>.01;w.userData.f.scale.y=Math.max(.01,f*.9);w.userData.f.position.y=3.35+f*.45});
+  const x0=TX+(prog+.5)*3.7+off;V.loco.forEach((l,k)=>{l.position.x=x0+1.7+3.4+k*6.6;l.visible=l.position.x<225})}
+ V.r.render(V.sc,V.cam)}
+
+/* ===================== controles gerais ===================== */
+$('#speed').onclick=e=>{const b=e.target.closest('button');if(!b)return;S.speed=+b.dataset.sp;$$('#speed button').forEach(x=>x.classList.toggle('on',x===b))};
+$('#pause').onclick=()=>{S.run=!S.run;$('#pause').textContent=S.run?'Pausar':'Retomar';$('#clockBox').classList.toggle('paused',!S.run)};
+$('#theme').onclick=()=>{const dk=document.documentElement.dataset.theme==='dark';document.documentElement.dataset.theme=dk?'light':'dark';$('#theme').textContent=dk?'Tema escuro':'Tema claro';if(window.Chart)buildCharts();setBg()};
+const TVSEQ=['sala','sin','ind','trens','rec','gestao'];let tv=null;
+$('#tvbtn').onclick=()=>{document.body.classList.add('tv');tv={i:0,t:0};show(TVSEQ[0]);try{document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen().catch(()=>{})}catch(e){}};
+function tvOff(){document.body.classList.remove('tv');tv=null;try{document.fullscreenElement&&document.exitFullscreen()}catch(e){}setTimeout(size3D,50)}
+$('#tvexit').onclick=tvOff;
+
+/* ===================== loop ===================== */
+let uiAcc=0,chAcc=0,slowAcc=0;
+function ui(dt){uiAcc+=dt;chAcc+=dt;slowAcc+=dt;
+ const d=new Date(BASE.getTime()+S.day*864e5);set('clock',`${DIAS[d.getDay()]} ${String(d.getDate()).padStart(2,'0')}/11 · ${hhmm(S.t)}:${String(Math.floor(S.t%60)).padStart(2,'0')}`);set('tvclock',hhmm(S.t));
+ if(uiAcc<.3)return;uiAcc=0;
+ const occ=S.stock/S.cap,cyc=S.cycleN?S.cycleSum/S.cycleN:0,hrs=Math.max(.5,S.t/3600);
+ set('hEmb',fmt(S.shipped));set('hEst',fmt(S.stock));set('hFila',S.queue.length);
+ set('kEmb',fmt(S.shipped));set('kEmbs',`<span class="${S.shipped/(META_DIA*S.t/86400)>=1?'up':'wa'}">${fmt(S.shipped/META_DIA*100)}%</span> da meta de ${fmt(META_DIA)} t`);
+ set('kEst',fmt(S.stock));set('kEsts',`${fmt(occ*100)}% da capacidade`);
+ set('kCam',fmt(S.trucks));set('kCams',`${S.queue.length} na fila · ${fmt(S.recv)} t`);
+ set('kCic',fmt(cyc));set('kCics',`<span class="${cyc<=45?'up':'dn'}">${cyc<=45?'▼ dentro':'▲ acima'}</span> da meta de 45 min`);
+ set('rFila',S.queue.length);set('rFilas',S.fail.balanca?'<span class="dn">balança em falha</span>':S.queue.length>=6?'<span class="dn">acima do normal</span>':'<span class="up">fluxo normal</span>');
+ const esp=S.queue.length?S.queue.reduce((a,t)=>a+(S.abs-t.ent),0)/S.queue.length/60:0;set('rEsp',fmt(esp));set('rEsps','de quem está aguardando agora');
+ set('rTx',fmt(S.trucks/hrs,1));set('rTxs','capacidade ~15 cam/h');set('rRecv',fmt(S.recv));set('rRecvs',`${fmt(S.trucks)} caminhões`);
+ set('gPct',fmt(occ*100,1)+'%');set('gT',fmt(S.stock)+' t de '+fmt(S.cap));set('aIn',fmt(S.recv)+' t');set('aOut',fmt(S.shipped)+' t');set('aCob',fmt(S.stock/(NV*CAPV),1)+' trens');set('semAc',S.semAc);
+ updTrain();updAlerts();updFlow();updHero();updSin();updConsole();
+ if(S.dirty.feed){renderFeed();S.dirty.feed=0}
+ if(S.dirty.rec&&cur==='rec'){renderRec();S.dirty.rec=0}
+ if(S.dirty.trem){renderTrem();S.dirty.trem=0;if(CH.chEst){const l=trainHist.slice(-12);CH.chEst.data.labels=l.map(t=>t.id);CH.chEst.data.datasets[0].data=l.map(()=>24);CH.chEst.data.datasets[1].data=l.map(t=>+t.est.toFixed(1));CH.chEst.data.datasets[1].backgroundColor=l.map(t=>t.est>24?css('--r'):css('--g'));CH.chEst.update()}}
+ if(V.infoFn&&cur==='sala'&&!$('#info3d').matches(':hover'))$('#info3d').innerHTML=`<div class="ib">${V.infoFn()}</div>`;
+ if(chAcc>2&&window.Chart&&CH.chEmb){chAcc=0;
+  CH.chEmb.data.datasets[1].data[30]=Math.round(S.shipped);CH.chEmb.update('none');
+  CH.chHora.data.datasets[0].data=S.hourRecv.map(Math.round);CH.chHora.data.datasets[1].data=S.hourShip.map(Math.round);CH.chHora.update('none');
+  CH.chGauge.data.datasets[0].data=[S.stock,S.cap-S.stock];CH.chGauge.data.datasets[0].backgroundColor[0]=occ>.85?css('--r'):css('--b');CH.chGauge.update('none');
+  CH.chStock.data.datasets[0].data[30]=Math.round(S.stock);CH.chStock.update('none')}
+ if(slowAcc>6&&window.Chart&&CH.chTransp){slowAcc=0;CH.chTransp.data.datasets[0].data=transpAvg();CH.chTransp.update();if(cur==='gestao')buildPar()}}
+buildSVG();
+if(window.Chart)buildCharts();else $$('canvas[id^=ch]').forEach(c=>c.insertAdjacentHTML('afterend','<div style="color:var(--muted);padding:20px">Gráfico indisponível offline.</div>'));
+renderFeed();renderTrem();renderRec();updConsole();init3D();
+let last=performance.now();
+function loop(now){const dt=Math.min(.1,(now-last)/1000);last=now;
+ if(S.run){let sd=dt*S.speed;while(sd>0){const s=Math.min(sd,5);step(s);sd-=s}}
+ if(tv){tv.t+=dt;$('#tvpr').style.width=(tv.t/15*100)+'%';if(tv.t>15){tv.t=0;tv.i=(tv.i+1)%TVSEQ.length;show(TVSEQ[tv.i])}}
+ ui(dt);render3D(dt);requestAnimationFrame(loop)}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
