@@ -4,6 +4,20 @@ Sala de controle de um terminal rodoferroviário de açúcar VHP: recebimento po
 
 > Projeto de portfólio com **dados fictícios**, criado por Marcelo José Gomes Parreira.
 
+## Parâmetros do terminal
+
+Dimensionado com a ordem de grandeza de um terminal real (dados passados por quem opera):
+
+| Item | Valor |
+|---|---|
+| Moegas de descarga | 3 |
+| Capacidade de recebimento | 800 t/h (~18 caminhões/h) |
+| Armazém | 40.000 t |
+| Carregamento de trens | 1.500 t/h |
+| Composições | 80 ou 136 vagões (~96 t por vagão) |
+
+Com esses números, um trem de 80 vagões carrega em ~5 h e um de 136 em ~9 h.
+
 ## Telas
 
 **Operação**
